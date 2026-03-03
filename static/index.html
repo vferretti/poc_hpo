@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HPO Tree Browser</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- LEFT PANEL - Tree Browser -->
+        <div class="panel panel-left">
+            <div class="panel-header">
+                <span id="left-count">0 &eacute;l&eacute;ment</span>
+            </div>
+            <div class="search-box">
+                <span class="search-icon">&#128269;</span>
+                <input type="text" id="search-input"
+                       placeholder="Recherche par terme d'ontologie - min 3 caract&egrave;res">
+                <button class="search-clear" id="search-clear" style="display:none;">&times;</button>
+            </div>
+            <div class="tree-container" id="tree-container">
+                <!-- Tree rendered by JS -->
+            </div>
+        </div>
+
+        <!-- RIGHT PANEL - Selection -->
+        <div class="panel panel-right">
+            <div class="panel-header">
+                <span id="right-count">0 &eacute;l&eacute;ment</span>
+            </div>
+            <div class="selection-container" id="selection-container">
+                <div class="empty-state" id="empty-state">
+                    <div class="empty-icons">&#128202; &#128203; &#128200;</div>
+                    <p>S&eacute;lectionnez des &eacute;l&eacute;ments dans le volet de gauche afin de les ajouter &agrave; votre requ&ecirc;te.</p>
+                </div>
+                <ul class="selection-list" id="selection-list">
+                </ul>
+            </div>
+        </div>
+    </div>
+    <script src="/static/app.js"></script>
+</body>
+</html>

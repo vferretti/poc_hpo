@@ -1,0 +1,257 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 14px;
+    color: #333;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.container {
+    display: flex;
+    height: 100vh;
+}
+
+/* --- Panels --- */
+
+.panel {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.panel-left {
+    flex: 3;
+    border-right: 2px solid #dde2e8;
+}
+
+.panel-right {
+    flex: 2;
+}
+
+.panel-header {
+    padding: 10px 16px;
+    background: #f7f8fa;
+    border-bottom: 1px solid #dde2e8;
+    font-size: 13px;
+    color: #555;
+    flex-shrink: 0;
+}
+
+/* --- Search Box --- */
+
+.search-box {
+    padding: 10px 16px;
+    border-bottom: 1px solid #dde2e8;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.search-icon {
+    font-size: 14px;
+    color: #999;
+    flex-shrink: 0;
+}
+
+.search-box input {
+    flex: 1;
+    border: 1px solid #ccd1d9;
+    border-radius: 4px;
+    padding: 8px 12px;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.search-box input:focus {
+    border-color: #4a90d9;
+    box-shadow: 0 0 0 2px rgba(74, 144, 217, 0.15);
+}
+
+.search-clear {
+    background: none;
+    border: 1px solid #ccd1d9;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    font-size: 16px;
+    cursor: pointer;
+    color: #999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.search-clear:hover {
+    background: #f0f0f0;
+    color: #666;
+}
+
+/* --- Tree --- */
+
+.tree-container {
+    overflow-y: auto;
+    flex: 1;
+    padding: 8px 0;
+}
+
+.tree-root {
+    padding-left: 12px;
+}
+
+.tree-node-row {
+    display: flex;
+    align-items: center;
+    padding: 3px 0;
+    cursor: default;
+    min-height: 28px;
+}
+
+.tree-node-row:hover {
+    background: #f5f7fa;
+}
+
+.tree-arrow {
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    color: #4a90d9;
+    font-size: 10px;
+    transition: transform 0.15s;
+    user-select: none;
+}
+
+.tree-arrow.expanded {
+    transform: rotate(90deg);
+}
+
+.tree-arrow.leaf {
+    visibility: hidden;
+}
+
+.tree-checkbox {
+    margin: 0 6px;
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: #4a90d9;
+}
+
+.tree-label {
+    white-space: nowrap;
+    user-select: none;
+}
+
+.tree-label .hp-id {
+    color: #888;
+    font-size: 12px;
+}
+
+.tree-label mark {
+    background-color: #fff44f;
+    color: inherit;
+    padding: 0 1px;
+    border-radius: 2px;
+}
+
+.tree-children {
+    padding-left: 20px;
+    margin-left: 9px;
+    border-left: 1px solid #dde2e8;
+}
+
+.tree-children.hidden {
+    display: none;
+}
+
+/* --- Selection Panel --- */
+
+.selection-container {
+    overflow-y: auto;
+    flex: 1;
+    padding: 8px 0;
+}
+
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #999;
+    text-align: center;
+    padding: 40px;
+}
+
+.empty-icons {
+    font-size: 32px;
+    margin-bottom: 16px;
+    opacity: 0.5;
+}
+
+.empty-state p {
+    max-width: 280px;
+    line-height: 1.5;
+}
+
+.selection-list {
+    list-style: none;
+}
+
+.selection-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 16px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.selection-item:hover {
+    background: #f5f7fa;
+}
+
+.selection-item-label {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.selection-item-label .hp-id {
+    color: #888;
+    font-size: 12px;
+}
+
+.selection-item-trash {
+    cursor: pointer;
+    color: #bbb;
+    margin-left: 12px;
+    font-size: 16px;
+    flex-shrink: 0;
+    transition: color 0.15s;
+}
+
+.selection-item-trash:hover {
+    color: #e04040;
+}
+
+/* Loading spinner */
+.loading {
+    color: #999;
+    font-style: italic;
+    padding: 4px 0 4px 12px;
+    font-size: 12px;
+}
