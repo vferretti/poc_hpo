@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import Landing from './components/Landing';
-import PhenotypeModal from './components/PhenotypeTree/PhenotypeModal.tsx';
+import PhenotypeModal from './components/PhenotypeTree/TransferModal';
 
 export interface SelectedHpo {
   code: string;

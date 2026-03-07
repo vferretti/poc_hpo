@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Input, Spin, Tree } from 'antd';
 import { SearchOutlined } from '@ant-design/icons';
-import { HpoTreeApi, HpoRootsResponse, HpoSearchNode, HpoSearchResponse, HpoTreeNode } from '../../api/hpoTreeApi.ts';
-import { TreeNode } from './types.ts';
+import { HpoTreeApi, HpoRootsResponse, HpoSearchNode, HpoSearchResponse, HpoTreeNode } from '../../api/hpoTreeApi';
+import { TreeNode } from './types';
+import { intl } from './intl';
 
-import './PhenotypeTree.css';
+import styles from './index.module.css';
 
 interface OwnProps {
   checkedKeys?: string[];
@@ -22,11 +23,16 @@ const getHpoId = (pathKey: string): string => {
   return idx >= 0 ? pathKey.substring(idx + 1) : pathKey;
 };
 
-const formatCount = (n: number) => `${n} élément${n > 1 ? 's' : ''}`;
+const formatCount = (n: number) => {
+  const label = n > 1
+    ? intl.get('component.phenotypeTree.count.plural')
+    : intl.get('component.phenotypeTree.count.singular');
+  return `${n} ${label}`;
+};
 
 const toTreeNode = (hpo: HpoTreeNode, disabled: Set<string>, bold = false): TreeNode => ({
   title: bold
-    ? (<span><strong>{hpo.label}</strong> <span className="hpo-id">({hpo.id})</span></span>) as unknown as string
+    ? (<span><strong>{hpo.label}</strong> <span className={styles.hpoId}>({hpo.id})</span></span>) as unknown as string
     : `${hpo.label} (${hpo.id})`,
   key: hpo.id,
   isLeaf: hpo.is_leaf,
@@ -41,10 +47,10 @@ const highlightLabel = (label: string, id: string, query: string): React.ReactNo
     <span>
       {parts.map((part, i) =>
         i % 2 === 1
-          ? <mark key={i} className="hpo-highlight">{part}</mark>
+          ? <mark key={i} className={styles.highlight}>{part}</mark>
           : part,
       )}
-      <span className="hpo-id"> ({id})</span>
+      <span className={styles.hpoId}> ({id})</span>
     </span>
   );
 };
@@ -215,18 +221,18 @@ const PhenotypeTree = ({
     }), []);
 
   return (
-    <div className={`phenotype-tree-wrapper ${className}`}>
-      <div className="phenotype-tree-header">{formatCount(matchCount ?? totalCount)}</div>
-      <div className="phenotype-tree-search-wrapper">
+    <div className={`${styles.wrapper} ${className}`}>
+      <div className={styles.header}>{formatCount(matchCount ?? totalCount)}</div>
+      <div className={styles.searchWrapper}>
         <Input
-          placeholder="Recherche par terme d'ontologie — min 3 caractères"
+          placeholder={intl.get('component.phenotypeTree.search.placeholder')}
           prefix={<SearchOutlined style={{ color: '#bbb' }} />}
           allowClear
           value={inputValue}
           onChange={(e) => handleInputChange(e.target.value ?? '')}
         />
       </div>
-      <div className="phenotype-tree-body">
+      <div className={styles.body}>
         <Spin spinning={loading}>
           <Tree
             loadData={searchMode ? undefined : onLoadData}

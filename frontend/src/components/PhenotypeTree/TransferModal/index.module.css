@@ -1,30 +1,31 @@
-.phenotype-tree-modal .ant-modal-body {
+.modal :global(.ant-modal-body) {
   padding: 0;
 }
 
-/* Two-panel layout matching CQDG screenshot */
-.hpo-transfer-container {
+.container {
   display: flex;
   height: 65vh;
   border-top: 1px solid #dde2e8;
 }
 
-.hpo-panel {
+.panel {
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
 
-.hpo-panel-left {
+.panelLeft {
+  composes: panel;
   flex: 1;
   border-right: 1px solid #dde2e8;
 }
 
-.hpo-panel-right {
+.panelRight {
+  composes: panel;
   flex: 1;
 }
 
-.hpo-panel-header {
+.panelHeader {
   padding: 10px 16px;
   font-size: 13px;
   color: #555;
@@ -33,29 +34,34 @@
   flex-shrink: 0;
 }
 
-.hpo-panel-body {
+.panelBody {
   overflow-y: auto;
   flex: 1;
 }
 
-.hpo-empty-state {
+.emptyState {
   margin-top: 120px;
 }
 
-.hpo-target-item {
+.targetItem {
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 8px 16px;
 }
 
-.hpo-delete-icon {
+.deleteIcon {
   color: #bbb;
   cursor: pointer;
   transition: color 0.15s;
   flex-shrink: 0;
 }
 
-.hpo-delete-icon:hover {
+.deleteIcon:hover {
   color: #e04040;
+}
+
+.hpoId {
+  color: #888;
+  font-size: 12px;
 }

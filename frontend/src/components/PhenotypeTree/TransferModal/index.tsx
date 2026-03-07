@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { DeleteOutlined } from '@ant-design/icons';
 import { Button, Empty, List, Modal, Typography } from 'antd';
-import PhenotypeTree from './PhenotypeTree.tsx';
+import PhenotypeTree from '..';
+import { intl } from '../intl';
 
-import './PhenotypeModal.css';
+import styles from './index.module.css';
 
 interface OwnProps {
   visible?: boolean;
@@ -12,12 +13,17 @@ interface OwnProps {
   disabledKeys?: string[];
 }
 
-const formatCount = (n: number) => `${n} élément${n > 1 ? 's' : ''}`;
-
 interface SelectedItem {
   id: string;
   name: string;
 }
+
+const formatCount = (n: number) => {
+  const label = n > 1
+    ? intl.get('component.phenotypeTree.count.plural')
+    : intl.get('component.phenotypeTree.count.singular');
+  return `${n} ${label}`;
+};
 
 const PhenotypeModal = ({
   visible = false,
@@ -73,12 +79,12 @@ const PhenotypeModal = ({
   return (
     <Modal
       open={isVisible}
-      title="Navigateur de phénotype observé (HPO)"
+      title={intl.get('component.phenotypeTree.modal.title')}
       width="80vw"
-      className="phenotype-tree-modal"
+      className={styles.modal}
       footer={[
         <Button key="back" onClick={handleCancel}>
-          Annuler
+          {intl.get('component.phenotypeTree.modal.cancelText')}
         </Button>,
         <Button
           key="apply"
@@ -86,14 +92,13 @@ const PhenotypeModal = ({
           onClick={handleApply}
           disabled={newSelections.length === 0}
         >
-          Appliquer
+          {intl.get('component.phenotypeTree.modal.okText')}
         </Button>,
       ]}
       onCancel={handleCancel}
     >
-      <div className="hpo-transfer-container">
-        {/* Left panel - Tree */}
-        <div className="hpo-panel hpo-panel-left">
+      <div className={styles.container}>
+        <div className={styles.panelLeft}>
           <PhenotypeTree
             key={treeKey}
             onCheckItem={handleCheckItem}
@@ -102,27 +107,26 @@ const PhenotypeModal = ({
           />
         </div>
 
-        {/* Right panel - Selection */}
-        <div className="hpo-panel hpo-panel-right">
-          <div className="hpo-panel-header">{formatCount(newSelections.length)}</div>
-          <div className="hpo-panel-body">
+        <div className={styles.panelRight}>
+          <div className={styles.panelHeader}>{formatCount(newSelections.length)}</div>
+          <div className={styles.panelBody}>
             {newSelections.length === 0 ? (
               <Empty
                 image={Empty.PRESENTED_IMAGE_SIMPLE}
-                description="Sélectionnez des éléments dans le volet de gauche afin de les ajouter à votre requête."
-                className="hpo-empty-state"
+                description={intl.get('component.phenotypeTree.modal.emptySelection')}
+                className={styles.emptyState}
               />
             ) : (
               <List
                 size="small"
                 dataSource={newSelections}
                 renderItem={(item) => (
-                  <List.Item key={item.id} className="hpo-target-item">
+                  <List.Item key={item.id} className={styles.targetItem}>
                     <Typography.Text ellipsis style={{ flex: 1 }}>
-                      {item.name} <span className="hpo-id">({item.id})</span>
+                      {item.name} <span className={styles.hpoId}>({item.id})</span>
                     </Typography.Text>
                     <DeleteOutlined
-                      className="hpo-delete-icon"
+                      className={styles.deleteIcon}
                       onClick={() =>
                         setSelectedItems((prev) => prev.filter((s) => s.id !== item.id))
                       }
