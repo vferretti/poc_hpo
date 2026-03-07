@@ -1,0 +1,61 @@
+.phenotype-tree-modal .ant-modal-body {
+  padding: 0;
+}
+
+/* Two-panel layout matching CQDG screenshot */
+.hpo-transfer-container {
+  display: flex;
+  height: 65vh;
+  border-top: 1px solid #dde2e8;
+}
+
+.hpo-panel {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.hpo-panel-left {
+  flex: 1;
+  border-right: 1px solid #dde2e8;
+}
+
+.hpo-panel-right {
+  flex: 1;
+}
+
+.hpo-panel-header {
+  padding: 10px 16px;
+  font-size: 13px;
+  color: #555;
+  background: #f7f8fa;
+  border-bottom: 1px solid #dde2e8;
+  flex-shrink: 0;
+}
+
+.hpo-panel-body {
+  overflow-y: auto;
+  flex: 1;
+}
+
+.hpo-empty-state {
+  margin-top: 120px;
+}
+
+.hpo-target-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+}
+
+.hpo-delete-icon {
+  color: #bbb;
+  cursor: pointer;
+  transition: color 0.15s;
+  flex-shrink: 0;
+}
+
+.hpo-delete-icon:hover {
+  color: #e04040;
+}

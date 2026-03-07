@@ -10,7 +10,7 @@ docker compose up
 
 Open **http://localhost:8000** in your browser.
 
-That's it. The first build takes ~30 seconds to download the Python image and install dependencies. Subsequent starts are instant.
+The first build takes ~1 minute to install dependencies and build the React frontend. Subsequent starts are instant.
 
 To stop:
 
@@ -20,19 +20,20 @@ docker compose down
 
 ## Features
 
-- **Tree browsing** - The tree starts collapsed showing the top-level categories (Abnormality of the nervous system, Abnormality of the cardiovascular system, etc.). Click the arrows to expand branches. Children are loaded on demand from the server.
-- **Search** - Type at least 3 characters in the search box. The server finds all matching terms and automatically expands the branches that contain them. Matching text is highlighted in yellow.
-- **Selection** - Check the box next to any term to add it to the selection panel on the right. Click the trash icon to remove a selection. Selections are preserved when you search or browse.
-- **Counts** - The left panel header shows the total number of terms (or the number of matches during a search). The right panel header shows how many terms are selected.
+- **Tree browsing** — The tree starts collapsed showing the top-level categories (bold). Click the arrows to expand branches. Children are loaded on demand from the server.
+- **Search** — Type at least 3 characters in the search box. The server finds all matching terms and expands the direct ancestor paths. Matching text is highlighted in yellow. A 600ms debounce prevents search from blocking typing.
+- **Multiple inheritance** — HPO terms can have multiple parents. The search tree uses path-based keys to display all paths to a matching term.
+- **Selection** — Check the box next to any term (or click its label) to add it to the right panel. Selections persist across search/browse mode changes. Click the trash icon to remove a selection.
+- **Counts** — The left panel shows total terms or match count during search. The right panel shows selected count.
 
 ## How it works
 
-- **Backend**: Python FastAPI server that loads `hp.json` (HPO in OBO Graph JSON format) into memory at startup. The working data is ~3 MB. Three API endpoints handle fetching root nodes, lazy-loading children, and server-side search with ancestor path computation.
-- **Frontend**: Vanilla HTML/CSS/JavaScript, no build step or framework.
+- **Backend**: Python FastAPI server that loads `hp.json` (HPO in OBO Graph JSON format) into memory at startup. Pre-computes lowercase labels and child counts for fast search. Three API endpoints: roots, lazy-load children, and search with ancestor path computation.
+- **Frontend**: React + Ant Design (antd Tree component), built with Vite.
 
 ## Updating the HPO data
 
-To use a newer version of `hp.json`, download it from [HPO releases](https://hpo.jax.org/data/ontology) and replace the `hp.json` file in this directory, then rebuild:
+Download from [HPO releases](https://hpo.jax.org/data/ontology), replace `hp.json`, then rebuild:
 
 ```bash
 docker compose build
@@ -41,23 +42,32 @@ docker compose up
 
 ## Running without Docker
 
-Requires Python 3.12+.
+Requires Python 3.12+ and Node 18+.
 
 ```bash
+# Backend
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 uvicorn main:app --port 8000
+
+# Frontend (dev mode with hot reload)
+cd frontend
+npm ci
+npm run dev
 ```
 
 ## Project structure
 
 ```
-main.py              Backend (FastAPI, data loading, 3 API endpoints)
-static/index.html    Two-panel UI layout
-static/style.css     Styles
-static/app.js        Tree rendering, search, selection logic
-hp.json              HPO data file (22 MB, OBO Graph JSON)
-Dockerfile           Container image definition
-docker-compose.yml   One-command deployment
+main.py                   Backend (FastAPI, data loading, 3 API endpoints)
+frontend/                 React frontend (Vite + antd)
+  src/
+    api/hpoTreeApi.ts     API client
+    components/
+      PhenotypeTree/      Tree browser + modal components
+      Landing/            Main page with selected HPOs table
+hp.json                   HPO data file (22 MB, OBO Graph JSON)
+Dockerfile                Multi-stage build (Node + Python)
+docker-compose.yml        One-command deployment
 ```

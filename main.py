@@ -30,6 +30,8 @@ class HPONode:
 # Global in-memory store
 nodes: dict[str, HPONode] = {}
 pa_subtree_ids: set[str] = set()
+label_lower: dict[str, str] = {}  # pre-computed lowercase labels for search
+child_count_cache: dict[str, int] = {}  # pre-computed PA child counts
 total_count: int = 0
 
 
@@ -95,6 +97,14 @@ def load_hpo_data(path: str) -> None:
 
     total_count = len(pa_subtree_ids) - 1  # exclude the root itself
 
+    # Pre-compute lowercase labels and child counts for fast search
+    for nid in pa_subtree_ids:
+        if nid in nodes:
+            n = nodes[nid]
+            child_count_cache[nid] = sum(1 for cid in n.children_ids if cid in pa_subtree_ids)
+            if nid != PA_ROOT:
+                label_lower[nid] = n.label.lower()
+
     # Free the raw JSON data
     del data
     print(f"Loaded {len(nodes)} total nodes, {len(pa_subtree_ids)} in PA subtree, {total_count} selectable terms.")
@@ -102,13 +112,12 @@ def load_hpo_data(path: str) -> None:
 
 def _node_to_dict(node: HPONode) -> dict:
     """Convert a node to the API response format."""
-    # Only count children that are in the PA subtree
-    child_count = sum(1 for cid in node.children_ids if cid in pa_subtree_ids)
+    cc = child_count_cache.get(node.id, 0)
     return {
         "id": node.id,
         "label": node.label,
-        "is_leaf": child_count == 0,
-        "child_count": child_count,
+        "is_leaf": cc == 0,
+        "child_count": cc,
     }
 
 
@@ -165,13 +174,10 @@ async def search(q: str = Query(..., min_length=3)):
     """Search for HPO terms by label substring. Returns matching nodes and their ancestor paths."""
     query_lower = q.lower()
 
-    # Step 1: Find matching nodes in PA subtree
+    # Step 1: Find matching nodes in PA subtree (uses pre-computed lowercase labels)
     matched_ids = set()
-    for nid in pa_subtree_ids:
-        if nid == PA_ROOT:
-            continue
-        node = nodes.get(nid)
-        if node and query_lower in node.label.lower():
+    for nid, lbl in label_lower.items():
+        if query_lower in lbl:
             matched_ids.add(nid)
 
     # Step 2: Walk up to find all ancestors (for expanding)
@@ -193,13 +199,8 @@ async def search(q: str = Query(..., min_length=3)):
         expanded_ids.add(PA_ROOT)
 
     # Step 3: Collect all nodes to return
-    # Include: ancestors, matched nodes, and siblings of expanded nodes
+    # Only include nodes on the direct path (ancestors + matches), no siblings
     all_node_ids = set(matched_ids) | set(expanded_ids)
-    for eid in list(expanded_ids):
-        if eid in nodes:
-            for cid in nodes[eid].children_ids:
-                if cid in pa_subtree_ids:
-                    all_node_ids.add(cid)
 
     # Build response nodes
     nodes_data = {}
@@ -207,12 +208,12 @@ async def search(q: str = Query(..., min_length=3)):
         if nid not in nodes:
             continue
         n = nodes[nid]
-        child_count = sum(1 for cid in n.children_ids if cid in pa_subtree_ids)
+        cc = child_count_cache.get(nid, 0)
         nodes_data[nid] = {
             "id": n.id,
             "label": n.label,
-            "is_leaf": child_count == 0,
-            "child_count": child_count,
+            "is_leaf": cc == 0,
+            "child_count": cc,
             "parent_ids": [pid for pid in n.parent_ids if pid in pa_subtree_ids],
         }
 
@@ -228,9 +229,23 @@ async def search(q: str = Query(..., min_length=3)):
 # --- Static files ---
 
 static_dir = Path(__file__).resolve().parent / "static"
-app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
+react_dist = static_dir / "dist"
 
+# Serve React build if available, otherwise fall back to vanilla static files
+if react_dist.exists():
+    app.mount("/assets", StaticFiles(directory=str(react_dist / "assets")), name="assets")
 
-@app.get("/")
-async def root():
-    return FileResponse(str(static_dir / "index.html"))
+    @app.get("/{full_path:path}")
+    async def serve_react(full_path: str):
+        """Serve the React SPA for all non-API routes."""
+        return FileResponse(str(react_dist / "index.html"))
+else:
+    app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
+
+    @app.get("/")
+    async def landing():
+        return FileResponse(str(static_dir / "landing.html"))
+
+    @app.get("/browser")
+    async def browser():
+        return FileResponse(str(static_dir / "index.html"))

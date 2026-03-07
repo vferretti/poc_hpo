@@ -12,6 +12,38 @@ body {
     overflow: hidden;
 }
 
+/* --- Landing Page --- */
+
+.landing {
+    display: flex;
+    flex-direction: column;
+    padding: 40px;
+    gap: 24px;
+}
+
+.landing h1 {
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.landing-link {
+    color: #4a90d9;
+    text-decoration: none;
+    font-size: 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.landing-link::before {
+    content: "\25B6";
+    font-size: 10px;
+}
+
+.landing-link:hover {
+    text-decoration: underline;
+}
+
 .container {
     display: flex;
     height: 100vh;

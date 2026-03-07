@@ -1,0 +1,38 @@
+.phenotype-tree-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.phenotype-tree-header {
+  padding: 10px 16px;
+  font-size: 13px;
+  color: #555;
+  background: #f7f8fa;
+  border-bottom: 1px solid #dde2e8;
+  flex-shrink: 0;
+}
+
+.phenotype-tree-search-wrapper {
+  padding: 12px 16px;
+  border-bottom: 1px solid #dde2e8;
+  flex-shrink: 0;
+}
+
+.phenotype-tree-body {
+  overflow-y: auto;
+  flex: 1;
+  padding: 4px 0;
+}
+
+mark.hpo-highlight {
+  background-color: #fff44f;
+  color: inherit;
+  padding: 0 1px;
+  border-radius: 2px;
+}
+
+.hpo-id {
+  color: #888;
+  font-size: 12px;
+}
