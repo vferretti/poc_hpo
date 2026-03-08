@@ -27,6 +27,16 @@
   color: var(--gray-6) !important;
 }
 
+.columnHeaders {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.columnHeaders .columnLabel:first-child {
+  width: 400px;
+}
+
 .signRow {
   display: flex;
   align-items: center;

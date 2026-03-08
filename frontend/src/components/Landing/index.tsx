@@ -21,6 +21,9 @@ import {
 } from '@ant-design/icons';
 import { Button, Checkbox, Divider, Input, Select, Space, Typography } from 'antd';
 
+// INTEGRATION: Replace with `import intl from 'react-intl-universal';`
+import { intl } from '../PhenotypeTree/intl';
+
 import type { HpoSuggestion, SelectedHpo } from '../../App';
 
 import styles from './index.module.css';
@@ -43,9 +46,6 @@ interface OwnProps {
   comment: string;
   onCommentChange: (value: string) => void;
 }
-
-// INTEGRATION: Replace with `intl.get('prescription.form.signs.observed.label')`
-// and similar for all hardcoded strings below.
 
 const Landing = ({
   observedSigns,
@@ -74,13 +74,13 @@ const Landing = ({
   const hiddenCount = suggestions.length - COLLAPSED_LIMIT;
   return (
     <div className={styles.page}>
-      <Typography.Title level={4} className={styles.title}>Signes cliniques</Typography.Title>
+      <Typography.Title level={4} className={styles.title}>{intl.get('prescription.clinical.signs.title')}</Typography.Title>
 
       {/* ── Observed signs ── */}
       <div className={styles.section}>
         <Space size={2}>
-          {/* INTEGRATION: Use <ProLabel requiredMark title={intl.get('prescription.form.signs.observed.label')} /> */}
-          <Text strong>* Sélectionner au moins un signe clinique OBSERVÉ :</Text>
+          {/* INTEGRATION: Use <ProLabel requiredMark title={intl.get('prescription.clinical.signs.observed.label')} /> */}
+          <Text strong>* {intl.get('prescription.clinical.signs.observed.label')}</Text>
         </Space>
 
         <Button
@@ -90,15 +90,19 @@ const Landing = ({
           icon={<PlusOutlined />}
           data-cy="OpenObservedHpoTreeModal"
         >
-          Parcourir l&apos;arbre HPO
+          {intl.get('prescription.clinical.signs.browse.hpo')}
         </Button>
 
         {/* Selected signs (from tree + checked suggestions) */}
         {observedSigns.length > 0 && (
           <>
             <Divider className={styles.divider} orientation="left" plain>
-              Signes sélectionnés ({observedSigns.length})
+              {intl.get('prescription.clinical.signs.selected')} ({observedSigns.length})
             </Divider>
+            <div className={styles.columnHeaders}>
+              <Text type="secondary" className={styles.columnLabel}>{intl.get('prescription.clinical.signs.column.sign')}</Text>
+              <Text type="secondary" className={styles.columnLabel}>{intl.get('prescription.clinical.signs.column.onset.age')}</Text>
+            </div>
             {observedSigns.map((hpo) => (
               <div key={hpo.code} className={styles.signRow}>
                 <Input className={styles.signInput} readOnly value={`${hpo.name} (${hpo.code})`} />
@@ -129,7 +133,7 @@ const Landing = ({
         {suggestions.length > 0 && (
           <>
             <Divider className={styles.divider} orientation="left" plain>
-              Suggestions pour cette analyse
+              {intl.get('prescription.clinical.signs.suggestions')}
             </Divider>
             {visibleSuggestions.map((s) => {
               const isChecked = observedCodes.has(s.code);
@@ -157,7 +161,9 @@ const Landing = ({
                 onClick={() => setSuggestionsExpanded(!suggestionsExpanded)}
                 icon={suggestionsExpanded ? <UpOutlined /> : <DownOutlined />}
               >
-                {suggestionsExpanded ? 'Réduire' : `Afficher les ${hiddenCount} autres suggestions`}
+                {suggestionsExpanded
+                  ? intl.get('prescription.clinical.signs.suggestions.collapse')
+                  : intl.get('prescription.clinical.signs.suggestions.expand').replace('{count}', String(hiddenCount))}
               </Button>
             )}
           </>
@@ -167,11 +173,11 @@ const Landing = ({
       {/* ── Not-observed signs ── */}
       <div className={styles.section}>
         <Space size={2}>
-          {/* INTEGRATION: Use <ProLabel title={intl.get('prescription.form.signs.not.observed.label')} /> */}
+          {/* INTEGRATION: Use <ProLabel title={intl.get('prescription.clinical.signs.not.observed.label')} /> */}
           <Text strong>
-            Ajouter les signes cliniques NON OBSERVÉS que vous jugez pertinents à l&apos;analyse
+            {intl.get('prescription.clinical.signs.not.observed.label')}
           </Text>
-          <Text type="secondary">(facultatif) :</Text>
+          <Text type="secondary">{intl.get('prescription.clinical.signs.not.observed.optional')}</Text>
         </Space>
 
         {notObservedSigns.map((hpo) => (
@@ -191,14 +197,14 @@ const Landing = ({
           icon={<PlusOutlined />}
           data-cy="OpenNotObservedHpoTreeModal"
         >
-          Parcourir l&apos;arbre HPO
+          {intl.get('prescription.clinical.signs.browse.hpo')}
         </Button>
       </div>
 
       {/* ── Comment ── */}
       <div className={styles.section}>
-        {/* INTEGRATION: Use <ProLabel title="Commentaire clinique général" colon /> */}
-        <Text strong>Commentaire clinique général :</Text>
+        {/* INTEGRATION: Use <ProLabel title={intl.get('prescription.clinical.signs.comment')} colon /> */}
+        <Text strong>{intl.get('prescription.clinical.signs.comment')} :</Text>
         <Input.TextArea
           className={styles.commentArea}
           rows={3}
