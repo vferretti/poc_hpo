@@ -1,9 +1,20 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Input, Spin, Tree } from 'antd';
 import { SearchOutlined } from '@ant-design/icons';
-import { HpoTreeApi, HpoRootsResponse, HpoSearchNode, HpoSearchResponse, HpoTreeNode } from '../../api/hpoTreeApi';
-import { TreeNode } from './types';
+import { Input, Spin, Tree } from 'antd';
+
+// INTEGRATION: Replace the two imports below with:
+//   import intl from 'react-intl-universal';
+//   import { HpoTreeApi } from 'api/hpo/hpoTreeApi';
 import { intl } from './intl';
+import {
+  HpoTreeApi,
+  HpoRootsResponse,
+  HpoSearchNode,
+  HpoSearchResponse,
+  HpoTreeNode,
+} from '../../api/hpoTreeApi';
+
+import { TreeNode } from './types';
 
 import styles from './index.module.css';
 
@@ -24,15 +35,21 @@ const getHpoId = (pathKey: string): string => {
 };
 
 const formatCount = (n: number) => {
-  const label = n > 1
-    ? intl.get('component.phenotypeTree.count.plural')
-    : intl.get('component.phenotypeTree.count.singular');
+  const label =
+    n > 1
+      ? intl.get('component.phenotypeTree.count.plural')
+      : intl.get('component.phenotypeTree.count.singular');
   return `${n} ${label}`;
 };
 
 const toTreeNode = (hpo: HpoTreeNode, disabled: Set<string>, bold = false): TreeNode => ({
   title: bold
-    ? (<span><strong>{hpo.label}</strong> <span className={styles.hpoId}>({hpo.id})</span></span>) as unknown as string
+    ? (
+        <span>
+          <strong>{hpo.label}</strong>{' '}
+          <span className={styles.hpoId}>({hpo.id})</span>
+        </span>
+      ) as unknown as string
     : `${hpo.label} (${hpo.id})`,
   key: hpo.id,
   isLeaf: hpo.is_leaf,
@@ -46,9 +63,13 @@ const highlightLabel = (label: string, id: string, query: string): React.ReactNo
   return (
     <span>
       {parts.map((part, i) =>
-        i % 2 === 1
-          ? <mark key={i} className={styles.highlight}>{part}</mark>
-          : part,
+        i % 2 === 1 ? (
+          <mark key={i} className={styles.highlight}>
+            {part}
+          </mark>
+        ) : (
+          part
+        ),
       )}
       <span className={styles.hpoId}> ({id})</span>
     </span>
@@ -67,7 +88,10 @@ function buildSearchTree(
   for (const node of Object.values(data.nodes)) {
     for (const pid of node.parent_ids ?? []) {
       let list = childrenOf.get(pid);
-      if (!list) { list = []; childrenOf.set(pid, list); }
+      if (!list) {
+        list = [];
+        childrenOf.set(pid, list);
+      }
       list.push(node);
     }
   }
@@ -85,7 +109,10 @@ function buildSearchTree(
     const pathKey = parentPathKey ? `${parentPathKey}/${id}` : id;
 
     let list = hpoIdToPathKeys.get(id);
-    if (!list) { list = []; hpoIdToPathKeys.set(id, list); }
+    if (!list) {
+      list = [];
+      hpoIdToPathKeys.set(id, list);
+    }
     list.push(pathKey);
 
     if (expandedIds.has(id)) expandedPathKeys.push(pathKey);
@@ -97,7 +124,9 @@ function buildSearchTree(
       : [];
 
     return {
-      title: (matchedIds.has(id) ? highlightLabel(nd.label, id, query) : `${nd.label} (${id})`) as string,
+      title: (
+        matchedIds.has(id) ? highlightLabel(nd.label, id, query) : `${nd.label} (${id})`
+      ) as string,
       key: pathKey,
       isLeaf: kids.length === 0,
       children: kids,
@@ -149,76 +178,97 @@ const PhenotypeTree = ({
 
   useEffect(() => {
     setLoading(true);
-    HpoTreeApi.fetchRoots().then((data) => {
-      rootsCacheRef.current = data;
-      data.children.forEach((c) => labelCacheRef.current.set(c.id, c.label));
-      applyRootsFromCache();
-    }).catch(() => {});
-  }, [applyRootsFromCache]);
-
-  const handleToggleItem = useCallback((pathKey: string) => {
-    const hpoId = searchMode ? getHpoId(pathKey) : pathKey;
-    if (disabledRef.current.has(hpoId)) return;
-    const label = labelCacheRef.current.get(hpoId) ?? hpoId;
-    onCheckItem?.(hpoId, !checkedKeys.includes(hpoId), label);
-  }, [searchMode, checkedKeys, onCheckItem]);
-
-  const handleInputChange = useCallback((value: string) => {
-    setInputValue(value);
-    const q = value.trim();
-
-    if (timerRef.current !== null) {
-      clearTimeout(timerRef.current);
-      timerRef.current = null;
-    }
-    if (abortRef.current) {
-      abortRef.current.abort();
-      abortRef.current = null;
-    }
-
-    const myId = ++requestIdRef.current;
-
-    if (q.length >= MIN_SEARCH_LENGTH) {
-      setLoading(true);
-      timerRef.current = setTimeout(() => {
-        timerRef.current = null;
-        const ctrl = new AbortController();
-        abortRef.current = ctrl;
-        HpoTreeApi.search(q, ctrl.signal).then((data) => {
-          if (requestIdRef.current !== myId) return;
-          Object.values(data.nodes).forEach((n) => labelCacheRef.current.set(n.id, n.label));
-          const result = buildSearchTree(data, q, disabledRef.current);
-          hpoIdToPathKeysRef.current = result.hpoIdToPathKeys;
-          setMatchCount(data.match_count);
-          setSearchMode(true);
-          setTreeNodes(result.tree);
-          setExpandedKeys(result.expanded);
-          setLoading(false);
-        }).catch(() => {});
-      }, DEBOUNCE_MS);
-    } else {
-      applyRootsFromCache();
-    }
-  }, [applyRootsFromCache]);
-
-  const onLoadData = useCallback((treeNode: any): Promise<void> =>
-    new Promise((resolve, reject) => {
-      HpoTreeApi.fetchChildren(treeNode.key as string).then((data) => {
+    HpoTreeApi.fetchRoots()
+      .then((data) => {
+        rootsCacheRef.current = data;
         data.children.forEach((c) => labelCacheRef.current.set(c.id, c.label));
-        setTreeNodes((prev) => {
-          const insert = (nodes: TreeNode[]): TreeNode[] =>
-            nodes.map((n) => {
-              if (n.key === treeNode.key)
-                return { ...n, children: data.children.map((c) => toTreeNode(c, disabledRef.current)) };
-              if (n.children?.length)
-                return { ...n, children: insert(n.children) };
-              return n;
+        applyRootsFromCache();
+      })
+      .catch(() => {});
+  }, [applyRootsFromCache]);
+
+  const handleToggleItem = useCallback(
+    (pathKey: string) => {
+      const hpoId = searchMode ? getHpoId(pathKey) : pathKey;
+      if (disabledRef.current.has(hpoId)) return;
+      const label = labelCacheRef.current.get(hpoId) ?? hpoId;
+      onCheckItem?.(hpoId, !checkedKeys.includes(hpoId), label);
+    },
+    [searchMode, checkedKeys, onCheckItem],
+  );
+
+  const handleInputChange = useCallback(
+    (value: string) => {
+      setInputValue(value);
+      const q = value.trim();
+
+      if (timerRef.current !== null) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+      if (abortRef.current) {
+        abortRef.current.abort();
+        abortRef.current = null;
+      }
+
+      const myId = ++requestIdRef.current;
+
+      if (q.length >= MIN_SEARCH_LENGTH) {
+        setLoading(true);
+        timerRef.current = setTimeout(() => {
+          timerRef.current = null;
+          const ctrl = new AbortController();
+          abortRef.current = ctrl;
+          HpoTreeApi.search(q, ctrl.signal)
+            .then((data) => {
+              if (requestIdRef.current !== myId) return;
+              Object.values(data.nodes).forEach((n) =>
+                labelCacheRef.current.set(n.id, n.label),
+              );
+              const result = buildSearchTree(data, q, disabledRef.current);
+              hpoIdToPathKeysRef.current = result.hpoIdToPathKeys;
+              setMatchCount(data.match_count);
+              setSearchMode(true);
+              setTreeNodes(result.tree);
+              setExpandedKeys(result.expanded);
+              setLoading(false);
+            })
+            .catch(() => {});
+        }, DEBOUNCE_MS);
+      } else {
+        applyRootsFromCache();
+      }
+    },
+    [applyRootsFromCache],
+  );
+
+  const onLoadData = useCallback(
+    (treeNode: any): Promise<void> =>
+      new Promise((resolve, reject) => {
+        HpoTreeApi.fetchChildren(treeNode.key as string)
+          .then((data) => {
+            data.children.forEach((c) => labelCacheRef.current.set(c.id, c.label));
+            setTreeNodes((prev) => {
+              const insert = (nodes: TreeNode[]): TreeNode[] =>
+                nodes.map((n) => {
+                  if (n.key === treeNode.key)
+                    return {
+                      ...n,
+                      children: data.children.map((c) =>
+                        toTreeNode(c, disabledRef.current),
+                      ),
+                    };
+                  if (n.children?.length) return { ...n, children: insert(n.children) };
+                  return n;
+                });
+              return insert(prev);
             });
-          return insert(prev);
-        });
-        resolve();
-      }).catch(reject);
-    }), []);
+            resolve();
+          })
+          .catch(reject);
+      }),
+    [],
+  );
 
   return (
     <div className={`${styles.wrapper} ${className}`}>
@@ -240,7 +290,9 @@ const PhenotypeTree = ({
             checkable
             checkedKeys={
               searchMode
-                ? checkedKeys.flatMap((id) => hpoIdToPathKeysRef.current.get(id) ?? [])
+                ? checkedKeys.flatMap(
+                    (id) => hpoIdToPathKeysRef.current.get(id) ?? [],
+                  )
                 : checkedKeys
             }
             expandedKeys={expandedKeys}

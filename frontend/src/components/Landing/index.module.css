@@ -1,0 +1,84 @@
+.page {
+  padding: 40px;
+  max-width: 960px;
+}
+
+.section {
+  margin-bottom: 24px;
+}
+
+.sectionTitle {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.divider {
+  margin: 12px 0 8px;
+  font-size: 13px !important;
+  color: #888 !important;
+}
+
+.signRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.signInput {
+  width: 400px;
+}
+
+.ageSelect {
+  min-width: 200px;
+  max-width: 200px;
+}
+
+.removeIcon {
+  color: #1d39c4;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.removeIcon:hover {
+  color: #e04040;
+}
+
+.addBtn {
+  padding-left: 0;
+  margin-bottom: 4px;
+}
+
+.addBtn span {
+  text-decoration: underline;
+}
+
+.addBtn span:hover {
+  text-decoration: none;
+}
+
+.suggestionRow {
+  margin-bottom: 4px;
+  padding-left: 4px;
+}
+
+.hpoCode {
+  color: #888;
+  font-size: 12px;
+}
+
+.checkAllBtn {
+  margin-left: 12px;
+  font-size: 12px;
+}
+
+.expandBtn {
+  padding-left: 4px;
+  margin-top: 4px;
+  font-size: 12px;
+}
+
+.commentArea {
+  max-width: 620px;
+}

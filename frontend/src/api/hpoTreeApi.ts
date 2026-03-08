@@ -1,3 +1,14 @@
+// INTEGRATION: Replace `fetch()` calls with `sendRequestWithRpt()` from 'api'.
+// Use the HPO_TREE_API_URL env variable for the base URL:
+//   import EnvironmentVariables from 'utils/EnvVariables';
+//   const HPO_TREE_SERVICE_URL = EnvironmentVariables.configFor('HPO_TREE_API_URL');
+// Then adapt each method, e.g.:
+//   const fetchRoots = () => sendRequestWithRpt<HpoRootsResponse>({
+//     method: 'GET',
+//     url: `${HPO_TREE_SERVICE_URL}/api/roots`,
+//   });
+// Note: sendRequestWithRpt returns { data, error } — unwrap accordingly.
+
 export interface HpoTreeNode {
   id: string;
   label: string;

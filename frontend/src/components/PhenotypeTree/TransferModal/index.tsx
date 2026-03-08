@@ -1,8 +1,13 @@
 import { useEffect, useState } from 'react';
 import { DeleteOutlined } from '@ant-design/icons';
 import { Button, Empty, List, Modal, Typography } from 'antd';
-import PhenotypeTree from '..';
+// INTEGRATION: Replace with `import Empty from '@ferlab/ui/core/components/Empty';`
+// and remove Empty from the antd import above.
+
+// INTEGRATION: Replace with `import intl from 'react-intl-universal';`
 import { intl } from '../intl';
+
+import PhenotypeTree from '..';
 
 import styles from './index.module.css';
 
@@ -19,9 +24,10 @@ interface SelectedItem {
 }
 
 const formatCount = (n: number) => {
-  const label = n > 1
-    ? intl.get('component.phenotypeTree.count.plural')
-    : intl.get('component.phenotypeTree.count.singular');
+  const label =
+    n > 1
+      ? intl.get('component.phenotypeTree.count.plural')
+      : intl.get('component.phenotypeTree.count.singular');
   return `${n} ${label}`;
 };
 

@@ -36,3 +36,14 @@
   color: #888;
   font-size: 12px;
 }
+
+.body :global(.ant-tree-switcher) {
+  width: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.body :global(.ant-tree-switcher-icon) {
+  font-size: 14px !important;
+}
