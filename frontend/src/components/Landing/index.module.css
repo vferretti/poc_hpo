@@ -1,6 +1,14 @@
+/* INTEGRATION: This styles the POC Landing page, equivalent to ClinicalSignsSelect.
+   Adapt styles into src/components/Prescription/components/ClinicalSignsSelect/index.module.css.
+   The CSS variables (--blue-*, --gray-*) are already provided by clin-portal-theme. */
+
 .page {
   padding: 40px;
   max-width: 960px;
+}
+
+.title {
+  color: var(--blue-9) !important;
 }
 
 .section {
@@ -16,7 +24,7 @@
 .divider {
   margin: 12px 0 8px;
   font-size: 13px !important;
-  color: #888 !important;
+  color: var(--gray-6) !important;
 }
 
 .signRow {
@@ -36,16 +44,14 @@
 }
 
 .removeIcon {
-  color: #1d39c4;
+  fill: var(--blue-8);
+  color: var(--blue-8);
   cursor: pointer;
   font-size: 14px;
 }
 
-.removeIcon:hover {
-  color: #e04040;
-}
-
 .addBtn {
+  display: block;
   padding-left: 0;
   margin-bottom: 4px;
 }
@@ -64,12 +70,7 @@
 }
 
 .hpoCode {
-  color: #888;
-  font-size: 12px;
-}
-
-.checkAllBtn {
-  margin-left: 12px;
+  color: var(--gray-7);
   font-size: 12px;
 }
 

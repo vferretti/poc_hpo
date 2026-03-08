@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+
 import { SearchOutlined } from '@ant-design/icons';
 import { Input, Spin, Tree } from 'antd';
 
-// INTEGRATION: Replace the two imports below with:
-//   import intl from 'react-intl-universal';
-//   import { HpoTreeApi } from 'api/hpo/hpoTreeApi';
+// INTEGRATION: Replace with `import intl from 'react-intl-universal';`
 import { intl } from './intl';
+
+// INTEGRATION: Replace with `import { HpoTreeApi } from 'api/hpo/hpoTreeApi';`
 import {
   HpoTreeApi,
   HpoRootsResponse,
@@ -13,7 +14,6 @@ import {
   HpoSearchResponse,
   HpoTreeNode,
 } from '../../api/hpoTreeApi';
-
 import { TreeNode } from './types';
 
 import styles from './index.module.css';

@@ -100,20 +100,6 @@ const App = () => {
     }
   };
 
-  const handleCheckAllSuggestions = () => {
-    const existing = new Set(observedSigns.map((h) => h.code));
-    const notObservedCodes = new Set(notObservedSigns.map((h) => h.code));
-    const toAdd = MOCK_SUGGESTIONS.filter(
-      (s) => !existing.has(s.code) && !notObservedCodes.has(s.code),
-    ).map((s) => ({
-      code: s.code,
-      name: s.name,
-      observed: true,
-      age_code: 'unknown',
-    }));
-    setObservedSigns((prev) => [...prev, ...toAdd]);
-  };
-
   return (
     <>
       <Landing
@@ -135,7 +121,6 @@ const App = () => {
           )
         }
         onToggleSuggestion={handleToggleSuggestion}
-        onCheckAllSuggestions={handleCheckAllSuggestions}
         comment={comment}
         onCommentChange={setComment}
       />

@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
+
 import { DeleteOutlined } from '@ant-design/icons';
+// INTEGRATION: Replace `Empty` below with `import Empty from '@ferlab/ui/core/components/Empty';`
+// and remove Empty from the antd import.
 import { Button, Empty, List, Modal, Typography } from 'antd';
-// INTEGRATION: Replace with `import Empty from '@ferlab/ui/core/components/Empty';`
-// and remove Empty from the antd import above.
 
 // INTEGRATION: Replace with `import intl from 'react-intl-universal';`
 import { intl } from '../intl';

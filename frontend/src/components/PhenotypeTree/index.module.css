@@ -1,3 +1,7 @@
+/* INTEGRATION: Copy this file as-is to src/components/PhenotypeTree/index.module.css.
+   It replaces the existing (empty) file. The CSS variables (--gray-*, --blue-*)
+   are already provided by clin-portal-theme. */
+
 .wrapper {
   display: flex;
   flex-direction: column;
@@ -7,15 +11,15 @@
 .header {
   padding: 10px 16px;
   font-size: 13px;
-  color: #555;
-  background: #f7f8fa;
-  border-bottom: 1px solid #dde2e8;
+  color: var(--gray-7);
+  background: var(--gray-1);
+  border-bottom: 1px solid var(--gray-4);
   flex-shrink: 0;
 }
 
 .searchWrapper {
   padding: 12px 16px;
-  border-bottom: 1px solid #dde2e8;
+  border-bottom: 1px solid var(--gray-4);
   flex-shrink: 0;
 }
 
@@ -25,16 +29,22 @@
   padding: 4px 0;
 }
 
-.highlight {
-  background-color: #fff44f;
-  color: inherit;
-  padding: 0 1px;
-  border-radius: 2px;
+.body :global(.ant-tree-list-holder-inner) {
+  display: block !important;
 }
 
-.hpoId {
-  color: #888;
-  font-size: 12px;
+.body :global(.ant-tree-treenode) {
+  width: 100%;
+}
+
+.body :global(.ant-tree-node-content-wrapper) {
+  width: 100%;
+  display: block;
+}
+
+.body :global(.ant-tree-title) {
+  display: block;
+  width: 100%;
 }
 
 .body :global(.ant-tree-switcher) {
@@ -46,4 +56,14 @@
 
 .body :global(.ant-tree-switcher-icon) {
   font-size: 14px !important;
+}
+
+.highlight {
+  background-color: yellow;
+  display: inherit;
+}
+
+.hpoId {
+  color: var(--gray-7);
+  font-size: 12px;
 }

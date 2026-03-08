@@ -14,7 +14,6 @@
 
 import { useState } from 'react';
 import {
-  CheckOutlined,
   CloseOutlined,
   DownOutlined,
   PlusOutlined,
@@ -41,7 +40,6 @@ interface OwnProps {
   onRemoveNotObserved: (code: string) => void;
   onAgeChange: (code: string, ageCode: string) => void;
   onToggleSuggestion: (suggestion: HpoSuggestion, checked: boolean) => void;
-  onCheckAllSuggestions: () => void;
   comment: string;
   onCommentChange: (value: string) => void;
 }
@@ -60,7 +58,6 @@ const Landing = ({
   onRemoveNotObserved,
   onAgeChange,
   onToggleSuggestion,
-  onCheckAllSuggestions,
   comment,
   onCommentChange,
 }: OwnProps) => {
@@ -75,13 +72,9 @@ const Landing = ({
       ? suggestions.slice(0, COLLAPSED_LIMIT)
       : suggestions;
   const hiddenCount = suggestions.length - COLLAPSED_LIMIT;
-  const allSuggestionsChecked =
-    suggestions.length > 0 &&
-    suggestions.every((s) => observedCodes.has(s.code) || allDisabledCodes.has(s.code));
-
   return (
     <div className={styles.page}>
-      <Typography.Title level={4}>Signes cliniques</Typography.Title>
+      <Typography.Title level={4} className={styles.title}>Signes cliniques</Typography.Title>
 
       {/* ── Observed signs ── */}
       <div className={styles.section}>
@@ -137,17 +130,6 @@ const Landing = ({
           <>
             <Divider className={styles.divider} orientation="left" plain>
               Suggestions pour cette analyse
-              {!allSuggestionsChecked && (
-                <Button
-                  type="link"
-                  size="small"
-                  className={styles.checkAllBtn}
-                  onClick={onCheckAllSuggestions}
-                  icon={<CheckOutlined />}
-                >
-                  Tout cocher
-                </Button>
-              )}
             </Divider>
             {visibleSuggestions.map((s) => {
               const isChecked = observedCodes.has(s.code);

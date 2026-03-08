@@ -1,0 +1,16 @@
+/* INTEGRATION: Delete this file entirely.
+   In clin, these variables come from clin-portal-theme/themes/clin/main.css
+   imported in src/index.js. */
+
+:root {
+  --blue-1: #eaf3fa;
+  --blue-2: #d6f1fb;
+  --blue-8: #006aa3;
+  --blue-9: #0a5085;
+  --gray-1: #ffffff;
+  --gray-4: #e1e8ef;
+  --gray-5: #b3c2d3;
+  --gray-6: #8b9db2;
+  --gray-7: #63768f;
+  --gray-8: #364a63;
+}
