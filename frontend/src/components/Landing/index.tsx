@@ -14,9 +14,9 @@
 
 import { useState } from 'react';
 import {
-  CloseOutlined,
   DownOutlined,
   PlusOutlined,
+  SearchOutlined,
   UpOutlined,
 } from '@ant-design/icons';
 import { Button, Checkbox, Divider, Input, Select, Space, Typography } from 'antd';
@@ -42,6 +42,7 @@ interface OwnProps {
   onRemoveObserved: (code: string) => void;
   onRemoveNotObserved: (code: string) => void;
   onAgeChange: (code: string, ageCode: string) => void;
+  onApplyAgeToAll: (ageCode: string) => void;
   onToggleSuggestion: (suggestion: HpoSuggestion, checked: boolean) => void;
   comment: string;
   onCommentChange: (value: string) => void;
@@ -57,21 +58,68 @@ const Landing = ({
   onRemoveObserved,
   onRemoveNotObserved,
   onAgeChange,
+  onApplyAgeToAll,
   onToggleSuggestion,
   comment,
   onCommentChange,
 }: OwnProps) => {
   const [suggestionsExpanded, setSuggestionsExpanded] = useState(false);
+  const [lastAgeChangeCode, setLastAgeChangeCode] = useState<string | null>(null);
 
   const observedCodes = new Set(observedSigns.map((h) => h.code));
   const allDisabledCodes = new Set(notObservedSigns.map((h) => h.code));
 
-  const shouldCollapse = suggestions.length > COLLAPSED_LIMIT + 2;
+  const browserSigns = observedSigns.filter((h) => h.source === 'browser');
+
+  const handleAgeChange = (code: string, ageCode: string) => {
+    onAgeChange(code, ageCode);
+    setLastAgeChangeCode(observedSigns.length > 1 ? code : null);
+  };
+
+  const handleApplyToAll = (ageCode: string) => {
+    onApplyAgeToAll(ageCode);
+    setLastAgeChangeCode(null);
+  };
+
+  const renderAgeSelect = (hpo: SelectedHpo) => (
+    <span className={styles.ageGroup}>
+      <Select
+        className={styles.ageSelectInline}
+        size="small"
+        value={hpo.age_code}
+        onChange={(value) => handleAgeChange(hpo.code, value)}
+        data-cy="SelectAge"
+      >
+        {ageOptions.map((age) => (
+          <Select.Option key={age.value} value={age.value}>
+            {age.name}
+          </Select.Option>
+        ))}
+      </Select>
+      {lastAgeChangeCode === hpo.code && (
+        <Button
+          type="link"
+          size="small"
+          className={styles.applyAllBtn}
+          onClick={() => handleApplyToAll(hpo.age_code)}
+        >
+          {intl.get('prescription.clinical.signs.age.apply.all')}
+        </Button>
+      )}
+    </span>
+  );
+
+  const checkedSuggestions = suggestions.filter((s) => observedCodes.has(s.code));
+  const uncheckedSuggestions = suggestions.filter((s) => !observedCodes.has(s.code));
+  const sortedSuggestions = [...checkedSuggestions, ...uncheckedSuggestions];
+
+  const shouldCollapse = sortedSuggestions.length > COLLAPSED_LIMIT + 2;
   const visibleSuggestions =
     shouldCollapse && !suggestionsExpanded
-      ? suggestions.slice(0, COLLAPSED_LIMIT)
-      : suggestions;
-  const hiddenCount = suggestions.length - COLLAPSED_LIMIT;
+      ? sortedSuggestions.slice(0, Math.max(COLLAPSED_LIMIT, checkedSuggestions.length))
+      : sortedSuggestions;
+  const hiddenCount = sortedSuggestions.length - visibleSuggestions.length;
+
   return (
     <div className={styles.page}>
       <Typography.Title level={4} className={styles.title}>{intl.get('prescription.clinical.signs.title')}</Typography.Title>
@@ -84,51 +132,38 @@ const Landing = ({
         </Space>
 
         <Button
-          type="link"
-          className={styles.addBtn}
+          type="primary"
+          className={styles.browseBtn}
           onClick={onOpenObservedModal}
-          icon={<PlusOutlined />}
+          icon={<SearchOutlined />}
           data-cy="OpenObservedHpoTreeModal"
         >
           {intl.get('prescription.clinical.signs.browse.hpo')}
         </Button>
 
-        {/* Selected signs (from tree + checked suggestions) */}
-        {observedSigns.length > 0 && (
+        {/* Items selected from the HPO browser — displayed as checked items */}
+        {browserSigns.length > 0 && (
           <>
             <Divider className={styles.divider} orientation="left" plain>
-              {intl.get('prescription.clinical.signs.selected')} ({observedSigns.length})
+              {intl.get('prescription.clinical.signs.from.browser')} ({browserSigns.length})
             </Divider>
-            <div className={styles.columnHeaders}>
-              <Text type="secondary" className={styles.columnLabel}>{intl.get('prescription.clinical.signs.column.sign')}</Text>
-              <Text type="secondary" className={styles.columnLabel}>{intl.get('prescription.clinical.signs.column.onset.age')}</Text>
-            </div>
-            {observedSigns.map((hpo) => (
-              <div key={hpo.code} className={styles.signRow}>
-                <Input className={styles.signInput} readOnly value={`${hpo.name} (${hpo.code})`} />
-                {/* INTEGRATION: Use formConfig.clinical_signs.onset_age for options */}
-                <Select
-                  className={styles.ageSelect}
-                  value={hpo.age_code}
-                  onChange={(value) => onAgeChange(hpo.code, value)}
-                  data-cy="SelectAge"
+            {browserSigns.map((hpo) => (
+              <div key={hpo.code} className={`${styles.suggestionRow} ${styles.suggestionRowChecked}`}>
+                <Checkbox
+                  checked
+                  onChange={() => onRemoveObserved(hpo.code)}
                 >
-                  {ageOptions.map((age) => (
-                    <Select.Option key={age.value} value={age.value}>
-                      {age.name}
-                    </Select.Option>
-                  ))}
-                </Select>
-                <CloseOutlined
-                  className={styles.removeIcon}
-                  onClick={() => onRemoveObserved(hpo.code)}
-                />
+                  <Text>
+                    {hpo.name} <Text type="secondary">({hpo.code})</Text>
+                  </Text>
+                </Checkbox>
+                {renderAgeSelect(hpo)}
               </div>
             ))}
           </>
         )}
 
-        {/* Suggestions for this analysis */}
+        {/* Suggestions for this analysis — inline with age selector */}
         {/* INTEGRATION: `suggestions` comes from usePrescriptionFormConfig().clinical_signs.default_list */}
         {suggestions.length > 0 && (
           <>
@@ -138,8 +173,9 @@ const Landing = ({
             {visibleSuggestions.map((s) => {
               const isChecked = observedCodes.has(s.code);
               const isDisabled = allDisabledCodes.has(s.code);
+              const hpo = isChecked ? observedSigns.find((h) => h.code === s.code) : null;
               return (
-                <div key={s.code} className={styles.suggestionRow}>
+                <div key={s.code} className={`${styles.suggestionRow} ${isChecked ? styles.suggestionRowChecked : ''}`}>
                   <Checkbox
                     checked={isChecked}
                     disabled={isDisabled}
@@ -150,6 +186,7 @@ const Landing = ({
                       {s.name} <Text type="secondary">({s.code})</Text>
                     </Text>
                   </Checkbox>
+                  {isChecked && hpo && renderAgeSelect(hpo)}
                 </div>
               );
             })}
@@ -172,33 +209,40 @@ const Landing = ({
 
       {/* ── Not-observed signs ── */}
       <div className={styles.section}>
-        <Space size={2}>
-          {/* INTEGRATION: Use <ProLabel title={intl.get('prescription.clinical.signs.not.observed.label')} /> */}
-          <Text strong>
-            {intl.get('prescription.clinical.signs.not.observed.label')}
-          </Text>
+        {notObservedSigns.length > 0 && (
+          <Divider className={styles.divider} orientation="left" plain>
+            {intl.get('prescription.clinical.signs.not.observed.section')} ({notObservedSigns.length})
+          </Divider>
+        )}
+
+        <div className={styles.notObservedRow}>
+          <Button
+            className={styles.notObservedBtn}
+            onClick={onOpenNotObservedModal}
+            icon={<PlusOutlined />}
+            data-cy="OpenNotObservedHpoTreeModal"
+          >
+            {intl.get('prescription.clinical.signs.not.observed.btn')}
+          </Button>
           <Text type="secondary">{intl.get('prescription.clinical.signs.not.observed.optional')}</Text>
-        </Space>
+        </div>
 
-        {notObservedSigns.map((hpo) => (
-          <div key={hpo.code} className={styles.signRow}>
-            <Input className={styles.signInput} readOnly value={`${hpo.name} (${hpo.code})`} />
-            <CloseOutlined
-              className={styles.removeIcon}
-              onClick={() => onRemoveNotObserved(hpo.code)}
-            />
-          </div>
-        ))}
-
-        <Button
-          type="link"
-          className={styles.addBtn}
-          onClick={onOpenNotObservedModal}
-          icon={<PlusOutlined />}
-          data-cy="OpenNotObservedHpoTreeModal"
-        >
-          {intl.get('prescription.clinical.signs.browse.hpo')}
-        </Button>
+        {notObservedSigns.length > 0 && (
+          <>
+            {notObservedSigns.map((hpo) => (
+              <div key={hpo.code} className={styles.suggestionRow}>
+                <Checkbox
+                  checked
+                  onChange={() => onRemoveNotObserved(hpo.code)}
+                >
+                  <Text>
+                    {hpo.name} <Text type="secondary">({hpo.code})</Text>
+                  </Text>
+                </Checkbox>
+              </div>
+            ))}
+          </>
+        )}
       </div>
 
       {/* ── Comment ── */}

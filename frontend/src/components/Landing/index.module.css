@@ -27,61 +27,37 @@
   color: var(--gray-6) !important;
 }
 
-.columnHeaders {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 4px;
-}
+/* ── Suggestions (inline checkboxes + age) ── */
 
-.columnHeaders .columnLabel:first-child {
-  width: 400px;
-}
-
-.signRow {
+.suggestionRow {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 8px;
+  margin-bottom: 2px;
+  padding: 4px 4px 4px 4px;
+  border-radius: 4px;
+  transition: background-color 0.15s;
 }
 
-.signInput {
-  width: 400px;
+.suggestionRowChecked {
 }
 
-.ageSelect {
-  min-width: 200px;
-  max-width: 200px;
+.ageGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 8px;
 }
 
-.removeIcon {
-  fill: var(--blue-8);
-  color: var(--blue-8);
-  cursor: pointer;
-  font-size: 14px;
+.ageSelectInline {
+  min-width: 300px;
+  max-width: 300px;
 }
 
-.addBtn {
-  display: block;
-  padding-left: 0;
-  margin-bottom: 4px;
-}
-
-.addBtn span {
-  text-decoration: underline;
-}
-
-.addBtn span:hover {
-  text-decoration: none;
-}
-
-.suggestionRow {
-  margin-bottom: 4px;
-  padding-left: 4px;
-}
-
-.hpoCode {
-  color: var(--gray-7);
+.applyAllBtn {
+  padding: 0 4px;
   font-size: 12px;
+  white-space: nowrap;
 }
 
 .expandBtn {
@@ -89,6 +65,27 @@
   margin-top: 4px;
   font-size: 12px;
 }
+
+/* ── HPO browser button (primary action) ── */
+
+.browseBtn {
+  display: block;
+  margin-top: 12px;
+}
+
+/* ── Not-observed ── */
+
+.notObservedRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.notObservedBtn {
+}
+
+/* ── Comment ── */
 
 .commentArea {
   max-width: 620px;

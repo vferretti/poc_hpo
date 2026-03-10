@@ -24,6 +24,7 @@ export interface SelectedHpo {
   name: string;
   observed: boolean;
   age_code: string;
+  source: 'suggestion' | 'browser';
 }
 
 export interface HpoSuggestion {
@@ -34,12 +35,15 @@ export interface HpoSuggestion {
 // INTEGRATION: Replace with usePrescriptionFormConfig().clinical_signs.onset_age
 const AGE_OPTIONS = [
   { value: 'unknown', name: 'Inconnu' },
-  { value: 'HP:0011460', name: 'Prénatal' },
-  { value: 'HP:0003623', name: 'Néonatal' },
-  { value: 'HP:0003593', name: 'Infantile' },
-  { value: 'HP:0011463', name: 'Enfance' },
-  { value: 'HP:0003621', name: 'Juvénile' },
-  { value: 'HP:0003581', name: 'Adulte' },
+  { value: 'HP:0030674', name: 'Anténatale' },
+  { value: 'HP:0003577', name: 'Congénitale' },
+  { value: 'HP:0003623', name: 'Néonatale (< 28 jours)' },
+  { value: 'HP:0003593', name: 'Enfant en bas âge (>= 28 jours et < 1 an)' },
+  { value: 'HP:0011463', name: 'Enfance (>= 1 an et < 5 ans)' },
+  { value: 'HP:0003621', name: 'Juvénile (>= 5 ans et < 16 ans)' },
+  { value: 'HP:0011462', name: 'Jeune adulte (>= 16 ans et < 40 ans)' },
+  { value: 'HP:0003596', name: "Adulte d'âge moyen (>= 40 ans et < 60 ans)" },
+  { value: 'HP:0003584', name: 'Adulte sénior (>= 60 ans)' },
 ];
 
 // INTEGRATION: Replace with usePrescriptionFormConfig().clinical_signs.default_list
@@ -74,7 +78,7 @@ const App = () => {
       const existing = new Set(prev.map((h) => h.code));
       const added: SelectedHpo[] = hpos
         .filter((h) => !existing.has(h.id))
-        .map((h) => ({ code: h.id, name: h.name, observed: true, age_code: 'unknown' }));
+        .map((h) => ({ code: h.id, name: h.name, observed: true, age_code: 'unknown', source: 'browser' as const }));
       return [...prev, ...added];
     });
   };
@@ -84,7 +88,7 @@ const App = () => {
       const existing = new Set(prev.map((h) => h.code));
       const added: SelectedHpo[] = hpos
         .filter((h) => !existing.has(h.id))
-        .map((h) => ({ code: h.id, name: h.name, observed: false, age_code: '' }));
+        .map((h) => ({ code: h.id, name: h.name, observed: false, age_code: '', source: 'browser' as const }));
       return [...prev, ...added];
     });
   };
@@ -93,7 +97,7 @@ const App = () => {
     if (checked) {
       setObservedSigns((prev) => [
         ...prev,
-        { code: suggestion.code, name: suggestion.name, observed: true, age_code: 'unknown' },
+        { code: suggestion.code, name: suggestion.name, observed: true, age_code: 'unknown', source: 'suggestion' as const },
       ]);
     } else {
       setObservedSigns((prev) => prev.filter((h) => h.code !== suggestion.code));
@@ -118,6 +122,11 @@ const App = () => {
         onAgeChange={(code, ageCode) =>
           setObservedSigns((prev) =>
             prev.map((h) => (h.code === code ? { ...h, age_code: ageCode } : h)),
+          )
+        }
+        onApplyAgeToAll={(ageCode) =>
+          setObservedSigns((prev) =>
+            prev.map((h) => ({ ...h, age_code: ageCode })),
           )
         }
         onToggleSuggestion={handleToggleSuggestion}

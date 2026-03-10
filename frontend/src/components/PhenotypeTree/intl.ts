@@ -48,12 +48,16 @@ const locale: Record<string, string> = {
   'prescription.clinical.signs.column.sign': 'Signe clinique',
   'prescription.clinical.signs.column.onset.age': "Âge d'apparition",
   'prescription.clinical.signs.suggestions': 'Suggestions pour cette analyse',
+  'prescription.clinical.signs.from.browser': "Sélectionnés depuis l'arbre HPO",
+  'prescription.clinical.signs.age.apply.all': 'Appliquer à tous',
   'prescription.clinical.signs.suggestions.expand':
     'Afficher les {count} autres suggestions',
   'prescription.clinical.signs.suggestions.collapse': 'Réduire',
+  'prescription.clinical.signs.not.observed.btn': 'Ajouter des signes NON OBSERVÉS',
+  'prescription.clinical.signs.not.observed.section': 'Signes non observés',
   'prescription.clinical.signs.not.observed.label':
     "Ajouter les signes cliniques NON OBSERVÉS que vous jugez pertinents à l'analyse",
-  'prescription.clinical.signs.not.observed.optional': '(facultatif) :',
+  'prescription.clinical.signs.not.observed.optional': '(facultatif)',
   'prescription.clinical.signs.comment': 'Commentaire clinique général',
 };
 
