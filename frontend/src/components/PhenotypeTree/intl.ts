@@ -42,7 +42,7 @@ const locale: Record<string, string> = {
   // Landing (ClinicalSignsSelect)
   'prescription.clinical.signs.title': 'Signes cliniques',
   'prescription.clinical.signs.observed.label':
-    'Sélectionner au moins un signe clinique OBSERVÉ :',
+    "Sélectionner au moins un signe clinique OBSERVÉ avec son âge d'apparition :",
   'prescription.clinical.signs.browse.hpo': "Parcourir l'arbre HPO",
   'prescription.clinical.signs.selected': 'Signes sélectionnés',
   'prescription.clinical.signs.column.sign': 'Signe clinique',

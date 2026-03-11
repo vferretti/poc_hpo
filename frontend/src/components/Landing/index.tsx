@@ -128,7 +128,7 @@ const Landing = ({
       <div className={styles.section}>
         <Space size={2}>
           {/* INTEGRATION: Use <ProLabel requiredMark title={intl.get('prescription.clinical.signs.observed.label')} /> */}
-          <Text strong>* {intl.get('prescription.clinical.signs.observed.label')}</Text>
+          <Text strong><span style={{ color: 'red' }}>*</span> {intl.get('prescription.clinical.signs.observed.label')}</Text>
         </Space>
 
         <Button
