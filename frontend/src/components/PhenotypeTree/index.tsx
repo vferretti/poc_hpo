@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { SearchOutlined } from '@ant-design/icons';
-import { Input, Spin, Tree } from 'antd';
+import { Input, Radio, Spin, Tree } from 'antd';
 
 // INTEGRATION: Replace with `import intl from 'react-intl-universal';`
 import { intl } from './intl';
@@ -13,15 +13,22 @@ import {
   HpoSearchNode,
   HpoSearchResponse,
   HpoTreeNode,
+  Lang,
 } from '../../api/hpoTreeApi';
 import { TreeNode } from './types';
 
 import styles from './index.module.css';
 
+export interface AutoTranslateStats {
+  autoCount: number;
+  totalCount: number;
+}
+
 interface OwnProps {
   checkedKeys?: string[];
   disabledKeys?: string[];
   onCheckItem?: (key: string, checked: boolean, label: string) => void;
+  onAutoTranslateStats?: (stats: AutoTranslateStats | null) => void;
   className?: string;
 }
 
@@ -146,6 +153,7 @@ const PhenotypeTree = ({
   checkedKeys = [],
   disabledKeys = [],
   onCheckItem,
+  onAutoTranslateStats,
   className = '',
 }: OwnProps) => {
   const [treeNodes, setTreeNodes] = useState<TreeNode[]>([]);
@@ -155,6 +163,7 @@ const PhenotypeTree = ({
   const [expandedKeys, setExpandedKeys] = useState<string[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [searchMode, setSearchMode] = useState(false);
+  const [lang, setLang] = useState<Lang>('fr');
 
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -165,27 +174,30 @@ const PhenotypeTree = ({
   const disabledRef = useRef(new Set(disabledKeys));
   disabledRef.current = new Set(disabledKeys);
 
-  const applyRootsFromCache = useCallback(() => {
-    const data = rootsCacheRef.current;
-    if (!data) return;
-    setTotalCount(data.total_count);
-    setMatchCount(null);
-    setSearchMode(false);
-    setTreeNodes(data.children.map((c) => toTreeNode(c, disabledRef.current, true)));
-    setExpandedKeys([]);
-    setLoading(false);
-  }, []);
-
-  useEffect(() => {
+  const loadRoots = useCallback((language: Lang) => {
     setLoading(true);
-    HpoTreeApi.fetchRoots()
+    HpoTreeApi.fetchRoots(language)
       .then((data) => {
         rootsCacheRef.current = data;
         data.children.forEach((c) => labelCacheRef.current.set(c.id, c.label));
-        applyRootsFromCache();
+        setTotalCount(data.total_count);
+        setMatchCount(null);
+        setSearchMode(false);
+        setTreeNodes(data.children.map((c) => toTreeNode(c, disabledRef.current, true)));
+        setExpandedKeys([]);
+        setLoading(false);
+        if (data.auto_translate_count && data.fr_total_count) {
+          onAutoTranslateStats?.({ autoCount: data.auto_translate_count, totalCount: data.fr_total_count });
+        } else {
+          onAutoTranslateStats?.(null);
+        }
       })
       .catch(() => {});
-  }, [applyRootsFromCache]);
+  }, [onAutoTranslateStats]);
+
+  useEffect(() => {
+    loadRoots(lang);
+  }, [lang, loadRoots]);
 
   const handleToggleItem = useCallback(
     (pathKey: string) => {
@@ -219,7 +231,7 @@ const PhenotypeTree = ({
           timerRef.current = null;
           const ctrl = new AbortController();
           abortRef.current = ctrl;
-          HpoTreeApi.search(q, ctrl.signal)
+          HpoTreeApi.search(q, lang, ctrl.signal)
             .then((data) => {
               if (requestIdRef.current !== myId) return;
               Object.values(data.nodes).forEach((n) =>
@@ -236,16 +248,16 @@ const PhenotypeTree = ({
             .catch(() => {});
         }, DEBOUNCE_MS);
       } else {
-        applyRootsFromCache();
+        loadRoots(lang);
       }
     },
-    [applyRootsFromCache],
+    [lang, loadRoots],
   );
 
   const onLoadData = useCallback(
     (treeNode: any): Promise<void> =>
       new Promise((resolve, reject) => {
-        HpoTreeApi.fetchChildren(treeNode.key as string)
+        HpoTreeApi.fetchChildren(treeNode.key as string, lang)
           .then((data) => {
             data.children.forEach((c) => labelCacheRef.current.set(c.id, c.label));
             setTreeNodes((prev) => {
@@ -267,12 +279,32 @@ const PhenotypeTree = ({
           })
           .catch(reject);
       }),
-    [],
+    [lang],
   );
+
+  const handleLangChange = useCallback((newLang: Lang) => {
+    setLang(newLang);
+    setInputValue('');
+    setMatchCount(null);
+    setSearchMode(false);
+  }, []);
 
   return (
     <div className={`${styles.wrapper} ${className}`}>
-      <div className={styles.header}>{formatCount(matchCount ?? totalCount)}</div>
+      <div className={styles.header}>
+        <span>{formatCount(matchCount ?? totalCount)}</span>
+        <Radio.Group
+          size="small"
+          value={lang}
+          onChange={(e) => handleLangChange(e.target.value)}
+          optionType="button"
+          buttonStyle="solid"
+          className={styles.langToggle}
+        >
+          <Radio.Button value="fr">FR</Radio.Button>
+          <Radio.Button value="en">EN</Radio.Button>
+        </Radio.Group>
+      </div>
       <div className={styles.searchWrapper}>
         <Input
           placeholder={intl.get('component.phenotypeTree.search.placeholder')}

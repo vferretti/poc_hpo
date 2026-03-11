@@ -8,7 +8,7 @@ import { Button, Empty, List, Modal, Typography } from 'antd';
 // INTEGRATION: Replace with `import intl from 'react-intl-universal';`
 import { intl } from '../intl';
 
-import PhenotypeTree from '..';
+import PhenotypeTree, { AutoTranslateStats } from '..';
 
 import styles from './index.module.css';
 
@@ -41,6 +41,7 @@ const PhenotypeModal = ({
   const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([]);
   const [isVisible, setIsVisible] = useState(visible);
   const [treeKey, setTreeKey] = useState(0);
+  const [autoTranslateStats, setAutoTranslateStats] = useState<AutoTranslateStats | null>(null);
 
   const checkedKeys = selectedItems.map((item) => item.id);
 
@@ -89,19 +90,28 @@ const PhenotypeModal = ({
       title={intl.get('component.phenotypeTree.modal.title')}
       width="80vw"
       className={styles.modal}
-      footer={[
-        <Button key="back" onClick={handleCancel}>
-          {intl.get('component.phenotypeTree.modal.cancelText')}
-        </Button>,
-        <Button
-          key="apply"
-          type="primary"
-          onClick={handleApply}
-          disabled={newSelections.length === 0}
-        >
-          {intl.get('component.phenotypeTree.modal.okText')}
-        </Button>,
-      ]}
+      footer={
+        <div className={styles.footer}>
+          {autoTranslateStats && (
+            <Typography.Text type="secondary" className={styles.autoTranslateNote}>
+              * les termes marqués d'un astérisque ont été traduits automatiquement ({autoTranslateStats.autoCount} sur {autoTranslateStats.totalCount} termes au total)
+            </Typography.Text>
+          )}
+          <div className={styles.footerButtons}>
+            <Button key="back" onClick={handleCancel}>
+              {intl.get('component.phenotypeTree.modal.cancelText')}
+            </Button>
+            <Button
+              key="apply"
+              type="primary"
+              onClick={handleApply}
+              disabled={newSelections.length === 0}
+            >
+              {intl.get('component.phenotypeTree.modal.okText')}
+            </Button>
+          </div>
+        </div>
+      }
       onCancel={handleCancel}
     >
       <div className={styles.container}>
@@ -111,6 +121,7 @@ const PhenotypeModal = ({
             onCheckItem={handleCheckItem}
             checkedKeys={checkedKeys}
             disabledKeys={disabledKeys}
+            onAutoTranslateStats={setAutoTranslateStats}
           />
         </div>
 

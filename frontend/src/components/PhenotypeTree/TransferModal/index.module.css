@@ -68,3 +68,21 @@
   color: var(--gray-7);
   font-size: 12px;
 }
+
+.footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.autoTranslateNote {
+  font-size: 12px;
+  font-style: italic;
+}
+
+.footerButtons {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}

@@ -1,5 +1,6 @@
 """HPO Tree Browser POC - FastAPI Backend."""
 
+import csv
 import json
 import os
 from collections import deque
@@ -12,15 +13,28 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 HP_JSON_PATH = os.environ.get("HP_JSON_PATH", str(Path(__file__).resolve().parent.parent / "hp.json"))
+_default_babelon = Path(__file__).resolve().parent.parent
+BABELON_PATH = os.environ.get(
+    "BABELON_PATH",
+    str(_default_babelon / "hp-fr-amended.babelon.tsv")
+    if (_default_babelon / "hp-fr-amended.babelon.tsv").exists()
+    else str(_default_babelon / "hp-fr.babelon.tsv"),
+)
 PA_ROOT = "HP:0000118"  # Phenotypic abnormality
 
 
 @dataclass
 class HPONode:
     id: str
-    label: str
+    label_en: str
+    label_fr: str = ""
     children_ids: list[str] = field(default_factory=list)
     parent_ids: list[str] = field(default_factory=list)
+
+    def label(self, lang: str = "fr") -> str:
+        if lang == "fr" and self.label_fr:
+            return self.label_fr
+        return self.label_en
 
     @property
     def is_leaf(self) -> bool:
@@ -30,9 +44,12 @@ class HPONode:
 # Global in-memory store
 nodes: dict[str, HPONode] = {}
 pa_subtree_ids: set[str] = set()
-label_lower: dict[str, str] = {}  # pre-computed lowercase labels for search
+label_lower_fr: dict[str, str] = {}  # pre-computed lowercase French labels
+label_lower_en: dict[str, str] = {}  # pre-computed lowercase English labels
 child_count_cache: dict[str, int] = {}  # pre-computed PA child counts
 total_count: int = 0
+fr_auto_count: int = 0  # number of automatically translated terms
+fr_total_count: int = 0  # total number of French translations (official + auto)
 
 
 def _url_to_hp_id(url: str) -> str:
@@ -66,7 +83,7 @@ def load_hpo_data(path: str) -> None:
         label = n.get("lbl", "")
         if not label:
             continue
-        nodes[hp_id] = HPONode(id=hp_id, label=label)
+        nodes[hp_id] = HPONode(id=hp_id, label_en=label)
 
     # Parse edges (all are is_a)
     for e in graph["edges"]:
@@ -77,9 +94,9 @@ def load_hpo_data(path: str) -> None:
         nodes[parent_id].children_ids.append(child_id)
         nodes[child_id].parent_ids.append(parent_id)
 
-    # Sort children alphabetically by label
+    # Sort children alphabetically by English label (will be re-sorted after French load)
     for node in nodes.values():
-        node.children_ids.sort(key=lambda cid: nodes[cid].label.lower() if cid in nodes else "")
+        node.children_ids.sort(key=lambda cid: nodes[cid].label_en.lower() if cid in nodes else "")
 
     # Build PA subtree set (BFS from PA_ROOT)
     if PA_ROOT not in nodes:
@@ -97,25 +114,60 @@ def load_hpo_data(path: str) -> None:
 
     total_count = len(pa_subtree_ids) - 1  # exclude the root itself
 
-    # Pre-compute lowercase labels and child counts for fast search
+    # Pre-compute child counts and English search index
     for nid in pa_subtree_ids:
         if nid in nodes:
-            n = nodes[nid]
-            child_count_cache[nid] = sum(1 for cid in n.children_ids if cid in pa_subtree_ids)
+            child_count_cache[nid] = sum(1 for cid in nodes[nid].children_ids if cid in pa_subtree_ids)
             if nid != PA_ROOT:
-                label_lower[nid] = n.label.lower()
+                label_lower_en[nid] = nodes[nid].label_en.lower()
 
     # Free the raw JSON data
     del data
     print(f"Loaded {len(nodes)} total nodes, {len(pa_subtree_ids)} in PA subtree, {total_count} selectable terms.")
 
 
-def _node_to_dict(node: HPONode) -> dict:
+def load_french_labels(path: str) -> None:
+    """Load French translations from babelon TSV and apply them to HPO nodes."""
+    if not Path(path).exists():
+        print(f"WARNING: Babelon file not found at {path}, keeping English labels.")
+        return
+
+    print(f"Loading French translations from {path}...")
+    official = 0
+    automatic = 0
+    with open(path, newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f, delimiter="\t")
+        for row in reader:
+            if row["predicate_id"] != "rdfs:label":
+                continue
+            hp_id = row["subject_id"]
+            if hp_id in nodes and row["translation_value"]:
+                is_auto = row.get("translation_status") == "AUTOMATIC"
+                suffix = " *" if is_auto else ""
+                nodes[hp_id].label_fr = row["translation_value"] + suffix
+                if is_auto:
+                    automatic += 1
+                else:
+                    official += 1
+
+    # Build French search index (falls back to English for untranslated terms)
+    for nid in pa_subtree_ids:
+        if nid in nodes and nid != PA_ROOT:
+            label_lower_fr[nid] = nodes[nid].label("fr").lower()
+
+    global fr_auto_count, fr_total_count
+    fr_auto_count = automatic
+    fr_total_count = official + automatic
+
+    print(f"Applied {official} official + {automatic} automatic French translations.")
+
+
+def _node_to_dict(node: HPONode, lang: str = "fr") -> dict:
     """Convert a node to the API response format."""
     cc = child_count_cache.get(node.id, 0)
     return {
         "id": node.id,
-        "label": node.label,
+        "label": node.label(lang),
         "is_leaf": cc == 0,
         "child_count": cc,
     }
@@ -124,6 +176,7 @@ def _node_to_dict(node: HPONode) -> dict:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     load_hpo_data(HP_JSON_PATH)
+    load_french_labels(BABELON_PATH)
     yield
 
 
@@ -133,33 +186,37 @@ app = FastAPI(title="HPO Tree Browser", lifespan=lifespan)
 # --- API Endpoints ---
 
 @app.get("/api/roots")
-async def get_roots():
+async def get_roots(lang: str = Query("fr", regex="^(fr|en)$")):
     """Return the direct children of Phenotypic abnormality."""
     if PA_ROOT not in nodes:
         raise HTTPException(status_code=500, detail="PA root not loaded")
 
     root_node = nodes[PA_ROOT]
     children = [
-        _node_to_dict(nodes[cid])
+        _node_to_dict(nodes[cid], lang)
         for cid in root_node.children_ids
         if cid in pa_subtree_ids and cid in nodes
     ]
-    return {
-        "root": _node_to_dict(root_node),
+    resp = {
+        "root": _node_to_dict(root_node, lang),
         "children": children,
         "total_count": total_count,
     }
+    if lang == "fr" and fr_auto_count > 0:
+        resp["auto_translate_count"] = fr_auto_count
+        resp["fr_total_count"] = fr_total_count
+    return resp
 
 
 @app.get("/api/children/{node_id}")
-async def get_children(node_id: str):
+async def get_children(node_id: str, lang: str = Query("fr", regex="^(fr|en)$")):
     """Return the direct children of a given node (lazy loading)."""
     if node_id not in nodes:
         raise HTTPException(status_code=404, detail=f"Node {node_id} not found")
 
     node = nodes[node_id]
     children = [
-        _node_to_dict(nodes[cid])
+        _node_to_dict(nodes[cid], lang)
         for cid in node.children_ids
         if cid in pa_subtree_ids and cid in nodes
     ]
@@ -170,13 +227,14 @@ async def get_children(node_id: str):
 
 
 @app.get("/api/search")
-async def search(q: str = Query(..., min_length=3)):
+async def search(q: str = Query(..., min_length=3), lang: str = Query("fr", regex="^(fr|en)$")):
     """Search for HPO terms by label substring. Returns matching nodes and their ancestor paths."""
     query_lower = q.lower()
+    search_index = label_lower_fr if lang == "fr" else label_lower_en
 
     # Step 1: Find matching nodes in PA subtree (uses pre-computed lowercase labels)
     matched_ids = set()
-    for nid, lbl in label_lower.items():
+    for nid, lbl in search_index.items():
         if query_lower in lbl:
             matched_ids.add(nid)
 
@@ -211,7 +269,7 @@ async def search(q: str = Query(..., min_length=3)):
         cc = child_count_cache.get(nid, 0)
         nodes_data[nid] = {
             "id": n.id,
-            "label": n.label,
+            "label": n.label(lang),
             "is_leaf": cc == 0,
             "child_count": cc,
             "parent_ids": [pid for pid in n.parent_ids if pid in pa_subtree_ids],

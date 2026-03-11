@@ -18,8 +18,10 @@ COPY main.py .
 COPY static/ static/
 COPY --from=frontend-builder /static/dist static/dist
 COPY hp.json .
+COPY hp-fr*.babelon.tsv .
 
 ENV HP_JSON_PATH=/app/hp.json
+ENV BABELON_PATH=/app/hp-fr-amended.babelon.tsv
 
 EXPOSE 8000
 
