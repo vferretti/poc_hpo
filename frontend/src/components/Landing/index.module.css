@@ -15,12 +15,6 @@
   margin-bottom: 24px;
 }
 
-.sectionTitle {
-  display: block;
-  font-weight: 600;
-  margin-bottom: 8px;
-}
-
 .divider {
   margin: 12px 0 8px;
   font-size: 13px !important;
@@ -37,9 +31,6 @@
   padding: 4px 4px 4px 4px;
   border-radius: 4px;
   transition: background-color 0.15s;
-}
-
-.suggestionRowChecked {
 }
 
 .ageGroup {
@@ -80,9 +71,6 @@
   align-items: center;
   gap: 8px;
   margin-bottom: 12px;
-}
-
-.notObservedBtn {
 }
 
 /* ── Comment ── */

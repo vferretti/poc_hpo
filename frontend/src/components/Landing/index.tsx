@@ -148,7 +148,7 @@ const Landing = ({
               {intl.get('prescription.clinical.signs.from.browser')} ({browserSigns.length})
             </Divider>
             {browserSigns.map((hpo) => (
-              <div key={hpo.code} className={`${styles.suggestionRow} ${styles.suggestionRowChecked}`}>
+              <div key={hpo.code} className={styles.suggestionRow}>
                 <Checkbox
                   checked
                   onChange={() => onRemoveObserved(hpo.code)}
@@ -175,7 +175,7 @@ const Landing = ({
               const isDisabled = allDisabledCodes.has(s.code);
               const hpo = isChecked ? observedSigns.find((h) => h.code === s.code) : null;
               return (
-                <div key={s.code} className={`${styles.suggestionRow} ${isChecked ? styles.suggestionRowChecked : ''}`}>
+                <div key={s.code} className={styles.suggestionRow}>
                   <Checkbox
                     checked={isChecked}
                     disabled={isDisabled}
@@ -217,7 +217,7 @@ const Landing = ({
 
         <div className={styles.notObservedRow}>
           <Button
-            className={styles.notObservedBtn}
+
             onClick={onOpenNotObservedModal}
             icon={<PlusOutlined />}
             data-cy="OpenNotObservedHpoTreeModal"
