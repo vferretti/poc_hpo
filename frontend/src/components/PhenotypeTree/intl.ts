@@ -13,6 +13,8 @@
 // "component.phenotypeTree.search.placeholder": "Recherche par terme d'ontologie — min 3 caractères",
 // "component.phenotypeTree.count.singular": "élément",
 // "component.phenotypeTree.count.plural": "éléments",
+// "component.phenotypeTree.tooltip.official": "Traduction officielle du terme",
+// "component.phenotypeTree.tooltip.automatic": "Traduction Google du terme",
 //
 // Landing (ClinicalSignsSelect):
 // "prescription.clinical.signs.title": "Signes cliniques",
@@ -38,6 +40,10 @@ const locale: Record<string, string> = {
     "Recherche par terme d'ontologie — min 3 caractères",
   'component.phenotypeTree.count.singular': 'élément',
   'component.phenotypeTree.count.plural': 'éléments',
+  'component.phenotypeTree.modal.autoTranslateNote':
+    '* les termes marqués d\'un astérisque ont été traduits par Google Translate ({autoCount} sur {totalCount} termes au total)',
+  'component.phenotypeTree.tooltip.official': 'Traduction officielle du terme',
+  'component.phenotypeTree.tooltip.automatic': 'Traduction Google du terme',
 
   // Landing (ClinicalSignsSelect)
   'prescription.clinical.signs.title': 'Signes cliniques',

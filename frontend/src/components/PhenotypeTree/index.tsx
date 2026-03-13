@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { SearchOutlined } from '@ant-design/icons';
-import { Input, Radio, Spin, Tree } from 'antd';
+import { Input, Radio, Spin, Tooltip, Tree } from 'antd';
 
 // INTEGRATION: Replace with `import intl from 'react-intl-universal';`
 import { intl } from './intl';
@@ -9,10 +9,10 @@ import { intl } from './intl';
 // INTEGRATION: Replace with `import { HpoTreeApi } from 'api/hpo/hpoTreeApi';`
 import {
   HpoTreeApi,
-  HpoRootsResponse,
-  HpoSearchNode,
-  HpoSearchResponse,
-  HpoTreeNode,
+  IHpoRootsResponse,
+  IHpoSearchNode,
+  IHpoSearchResponse,
+  IHpoTreeNode,
   Lang,
 } from '../../api/hpoTreeApi';
 import { TreeNode } from './types';
@@ -49,49 +49,71 @@ const formatCount = (n: number) => {
   return `${n} ${label}`;
 };
 
-const toTreeNode = (hpo: HpoTreeNode, disabled: Set<string>, bold = false): TreeNode => ({
-  title: bold
+const getTooltipText = (hpo: IHpoTreeNode): string | undefined => {
+  if (!hpo.label_en || !hpo.translation_type) return undefined;
+  const key = hpo.translation_type === 'automatic'
+    ? 'component.phenotypeTree.tooltip.automatic'
+    : 'component.phenotypeTree.tooltip.official';
+  return `${intl.get(key)}\n${hpo.label_en}`;
+};
+
+const wrapWithTooltip = (content: React.ReactNode, tooltip: string | undefined): React.ReactNode =>
+  tooltip ? <Tooltip title={<span style={{ whiteSpace: 'pre-line' }}>{tooltip}</span>}>{content}</Tooltip> : content;
+
+const toTreeNode = (hpo: IHpoTreeNode, disabled: Set<string>, bold = false): TreeNode => {
+  const tooltip = getTooltipText(hpo);
+  const content = bold
     ? (
         <span>
           <strong>{hpo.label}</strong>{' '}
           <span className={styles.hpoId}>({hpo.id})</span>
         </span>
-      ) as unknown as string
-    : `${hpo.label} (${hpo.id})`,
-  key: hpo.id,
-  isLeaf: hpo.is_leaf,
-  children: [],
-  disabled: disabled.has(hpo.id),
-});
+      )
+    : <span>{hpo.label} ({hpo.id})</span>;
+
+  return {
+    title: wrapWithTooltip(content, tooltip) as string,
+    key: hpo.id,
+    isLeaf: hpo.is_leaf,
+    children: [],
+    disabled: disabled.has(hpo.id),
+  };
+};
+
+const highlightText = (text: string, query: string, className?: string): React.ReactNode => {
+  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const parts = text.split(new RegExp(`(${escaped})`, 'gi'));
+  return parts.map((part, i) =>
+    i % 2 === 1 ? (
+      <mark key={i} className={styles.highlight}>
+        {part}
+      </mark>
+    ) : className ? (
+      <span key={i} className={className}>{part}</span>
+    ) : (
+      part
+    ),
+  );
+};
 
 const highlightLabel = (label: string, id: string, query: string): React.ReactNode => {
-  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const parts = label.split(new RegExp(`(${escaped})`, 'gi'));
   return (
     <span>
-      {parts.map((part, i) =>
-        i % 2 === 1 ? (
-          <mark key={i} className={styles.highlight}>
-            {part}
-          </mark>
-        ) : (
-          part
-        ),
-      )}
-      <span className={styles.hpoId}> ({id})</span>
+      {highlightText(label, query)}
+      <span className={styles.hpoId}> ({highlightText(id, query)})</span>
     </span>
   );
 };
 
 function buildSearchTree(
-  data: HpoSearchResponse,
+  data: IHpoSearchResponse,
   query: string,
   disabled: Set<string>,
 ): { tree: TreeNode[]; expanded: string[]; hpoIdToPathKeys: Map<string, string[]> } {
   const matchedIds = new Set(data.matched_ids);
   const expandedIds = new Set(data.expanded_ids);
 
-  const childrenOf = new Map<string, HpoSearchNode[]>();
+  const childrenOf = new Map<string, IHpoSearchNode[]>();
   for (const node of Object.values(data.nodes)) {
     for (const pid of node.parent_ids ?? []) {
       let list = childrenOf.get(pid);
@@ -130,10 +152,16 @@ function buildSearchTree(
           .filter((n): n is TreeNode => n !== null)
       : [];
 
+    const tooltip = nd.label_en && nd.translation_type
+      ? `${intl.get(nd.translation_type === 'automatic' ? 'component.phenotypeTree.tooltip.automatic' : 'component.phenotypeTree.tooltip.official')}\n${nd.label_en}`
+      : undefined;
+
+    const content = matchedIds.has(id)
+      ? highlightLabel(nd.label, id, query)
+      : <span>{nd.label} ({id})</span>;
+
     return {
-      title: (
-        matchedIds.has(id) ? highlightLabel(nd.label, id, query) : `${nd.label} (${id})`
-      ) as string,
+      title: wrapWithTooltip(content, tooltip) as string,
       key: pathKey,
       isLeaf: kids.length === 0,
       children: kids,
@@ -169,7 +197,7 @@ const PhenotypeTree = ({
   const abortRef = useRef<AbortController | null>(null);
   const requestIdRef = useRef(0);
   const hpoIdToPathKeysRef = useRef(new Map<string, string[]>());
-  const rootsCacheRef = useRef<HpoRootsResponse | null>(null);
+  const rootsCacheRef = useRef<IHpoRootsResponse | null>(null);
   const labelCacheRef = useRef(new Map<string, string>());
   const disabledRef = useRef(new Set(disabledKeys));
   disabledRef.current = new Set(disabledKeys);

@@ -30,7 +30,7 @@ import styles from './index.module.css';
 
 const { Text } = Typography;
 
-const COLLAPSED_LIMIT = 5;
+const COLLAPSED_LIMIT = 8;
 
 interface OwnProps {
   observedSigns: SelectedHpo[];

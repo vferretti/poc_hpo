@@ -76,7 +76,7 @@ const PhenotypeModal = ({
   const handleCheckItem = (key: string, checked: boolean, label: string) => {
     if (disabledKeys.includes(key)) return;
     if (checked) {
-      setSelectedItems((prev) => [...prev, { id: key, name: label }]);
+      setSelectedItems((prev) => [...prev, { id: key, name: label.replace(/ \*$/, '') }]);
     } else {
       setSelectedItems((prev) => prev.filter((item) => item.id !== key));
     }
@@ -94,7 +94,7 @@ const PhenotypeModal = ({
         <div className={styles.footer}>
           {autoTranslateStats && (
             <Typography.Text type="secondary" className={styles.autoTranslateNote}>
-              * les termes marqués d'un astérisque ont été traduits automatiquement ({autoTranslateStats.autoCount} sur {autoTranslateStats.totalCount} termes au total)
+              {intl.get('component.phenotypeTree.modal.autoTranslateNote').replace('{autoCount}', String(autoTranslateStats.autoCount)).replace('{totalCount}', String(autoTranslateStats.totalCount))}
             </Typography.Text>
           )}
           <div className={styles.footerButtons}>

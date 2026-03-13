@@ -12,8 +12,8 @@ from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-HP_JSON_PATH = os.environ.get("HP_JSON_PATH", str(Path(__file__).resolve().parent.parent / "hp.json"))
-_default_babelon = Path(__file__).resolve().parent.parent
+HP_JSON_PATH = os.environ.get("HP_JSON_PATH", str(Path(__file__).resolve().parent / "hp.json"))
+_default_babelon = Path(__file__).resolve().parent
 BABELON_PATH = os.environ.get(
     "BABELON_PATH",
     str(_default_babelon / "hp-fr-amended.babelon.tsv")
@@ -28,6 +28,7 @@ class HPONode:
     id: str
     label_en: str
     label_fr: str = ""
+    translation_type: str = ""  # "official", "automatic", or "" (no translation)
     children_ids: list[str] = field(default_factory=list)
     parent_ids: list[str] = field(default_factory=list)
 
@@ -141,10 +142,11 @@ def load_french_labels(path: str) -> None:
             if row["predicate_id"] != "rdfs:label":
                 continue
             hp_id = row["subject_id"]
-            if hp_id in nodes and row["translation_value"]:
+            if hp_id in pa_subtree_ids and hp_id in nodes and row["translation_value"]:
                 is_auto = row.get("translation_status") == "AUTOMATIC"
                 suffix = " *" if is_auto else ""
                 nodes[hp_id].label_fr = row["translation_value"] + suffix
+                nodes[hp_id].translation_type = "automatic" if is_auto else "official"
                 if is_auto:
                     automatic += 1
                 else:
@@ -165,12 +167,16 @@ def load_french_labels(path: str) -> None:
 def _node_to_dict(node: HPONode, lang: str = "fr") -> dict:
     """Convert a node to the API response format."""
     cc = child_count_cache.get(node.id, 0)
-    return {
+    d: dict = {
         "id": node.id,
         "label": node.label(lang),
         "is_leaf": cc == 0,
         "child_count": cc,
     }
+    if lang == "fr" and node.label_fr:
+        d["label_en"] = node.label_en
+        d["translation_type"] = node.translation_type
+    return d
 
 
 @asynccontextmanager
@@ -192,11 +198,9 @@ async def get_roots(lang: str = Query("fr", regex="^(fr|en)$")):
         raise HTTPException(status_code=500, detail="PA root not loaded")
 
     root_node = nodes[PA_ROOT]
-    children = [
-        _node_to_dict(nodes[cid], lang)
-        for cid in root_node.children_ids
-        if cid in pa_subtree_ids and cid in nodes
-    ]
+    valid_cids = [cid for cid in root_node.children_ids if cid in pa_subtree_ids and cid in nodes]
+    valid_cids.sort(key=lambda cid: nodes[cid].label(lang).lower())
+    children = [_node_to_dict(nodes[cid], lang) for cid in valid_cids]
     resp = {
         "root": _node_to_dict(root_node, lang),
         "children": children,
@@ -204,7 +208,7 @@ async def get_roots(lang: str = Query("fr", regex="^(fr|en)$")):
     }
     if lang == "fr" and fr_auto_count > 0:
         resp["auto_translate_count"] = fr_auto_count
-        resp["fr_total_count"] = fr_total_count
+        resp["fr_total_count"] = total_count
     return resp
 
 
@@ -215,11 +219,9 @@ async def get_children(node_id: str, lang: str = Query("fr", regex="^(fr|en)$"))
         raise HTTPException(status_code=404, detail=f"Node {node_id} not found")
 
     node = nodes[node_id]
-    children = [
-        _node_to_dict(nodes[cid], lang)
-        for cid in node.children_ids
-        if cid in pa_subtree_ids and cid in nodes
-    ]
+    valid_cids = [cid for cid in node.children_ids if cid in pa_subtree_ids and cid in nodes]
+    valid_cids.sort(key=lambda cid: nodes[cid].label(lang).lower())
+    children = [_node_to_dict(nodes[cid], lang) for cid in valid_cids]
     return {
         "parent_id": node_id,
         "children": children,
@@ -232,10 +234,10 @@ async def search(q: str = Query(..., min_length=3), lang: str = Query("fr", rege
     query_lower = q.lower()
     search_index = label_lower_fr if lang == "fr" else label_lower_en
 
-    # Step 1: Find matching nodes in PA subtree (uses pre-computed lowercase labels)
+    # Step 1: Find matching nodes in PA subtree (label + HP ID)
     matched_ids = set()
     for nid, lbl in search_index.items():
-        if query_lower in lbl:
+        if query_lower in lbl or query_lower in nid.lower():
             matched_ids.add(nid)
 
     # Step 2: Walk up to find all ancestors (for expanding)
@@ -267,13 +269,17 @@ async def search(q: str = Query(..., min_length=3), lang: str = Query("fr", rege
             continue
         n = nodes[nid]
         cc = child_count_cache.get(nid, 0)
-        nodes_data[nid] = {
+        nd: dict = {
             "id": n.id,
             "label": n.label(lang),
             "is_leaf": cc == 0,
             "child_count": cc,
             "parent_ids": [pid for pid in n.parent_ids if pid in pa_subtree_ids],
         }
+        if lang == "fr" and n.label_fr:
+            nd["label_en"] = n.label_en
+            nd["translation_type"] = n.translation_type
+        nodes_data[nid] = nd
 
     return {
         "query": q,

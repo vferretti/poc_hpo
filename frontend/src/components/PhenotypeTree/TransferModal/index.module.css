@@ -7,7 +7,7 @@
 
 .container {
   display: flex;
-  height: 65vh;
+  height: 80vh;
   border-top: 1px solid var(--gray-4);
 }
 
@@ -77,7 +77,7 @@
 }
 
 .autoTranslateNote {
-  font-size: 12px;
+  font-size: 14px;
   font-style: italic;
 }
 
