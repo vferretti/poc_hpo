@@ -20,12 +20,15 @@ Usage:
 
 import csv
 import json
+import logging
 import sys
 import time
 from collections import deque
 from pathlib import Path
 
 from deep_translator import GoogleTranslator
+
+logger = logging.getLogger(__name__)
 
 PA_ROOT = "HP:0000118"
 BATCH_SIZE = 100
@@ -113,8 +116,10 @@ def translate_batch(terms: list[str]) -> list[str]:
 
 
 def main():
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+
     if len(sys.argv) < 2:
-        print(f"Usage: {sys.argv[0]} /path/to/poc_hpo")
+        logger.error("Usage: %s /path/to/poc_hpo", sys.argv[0])
         sys.exit(1)
 
     target_dir = Path(sys.argv[1]).resolve()
@@ -124,22 +129,22 @@ def main():
 
     for f in (hp_obo, babelon_in):
         if not f.exists():
-            print(f"Error: {f} not found")
+            logger.error("File not found: %s", f)
             sys.exit(1)
 
-    print(f"Loading HPO terms from {hp_obo}...")
+    logger.info("Loading HPO terms from %s …", hp_obo)
     pa_terms = load_pa_terms(hp_obo)
-    print(f"  {len(pa_terms)} active terms under Phenotypic abnormality")
+    logger.info("  %d active terms under Phenotypic abnormality", len(pa_terms))
 
-    print(f"Loading existing translations from {babelon_in}...")
+    logger.info("Loading existing translations from %s …", babelon_in)
     existing_rows, translated_ids = load_existing_translations(babelon_in)
-    print(f"  {len(translated_ids)} terms with French label")
+    logger.info("  %d terms with French label", len(translated_ids))
 
     missing = {hp_id: label for hp_id, label in pa_terms.items() if hp_id not in translated_ids}
-    print(f"  {len(missing)} terms need translation")
+    logger.info("  %d terms need translation", len(missing))
 
     if not missing:
-        print("Nothing to do — all terms are translated.")
+        logger.info("Nothing to do — all terms are translated.")
         return
 
     missing_ids = sorted(missing.keys())
@@ -151,14 +156,14 @@ def main():
     if cache_file.exists():
         with open(cache_file) as cf:
             translations = json.load(cf)
-        print(f"  Loaded {len(translations)} cached translations from previous run")
+        logger.info("  Loaded %d cached translations from previous run", len(translations))
 
     # Filter out already-translated terms
     remaining_ids = [hp_id for hp_id in missing_ids if hp_id not in translations]
     remaining_labels = [missing[hp_id] for hp_id in remaining_ids]
 
     if remaining_labels:
-        print(f"Translating {len(remaining_labels)} terms via Google Translate (batch size {BATCH_SIZE})...")
+        logger.info("Translating %d terms via Google Translate (batch size %d) …", len(remaining_labels), BATCH_SIZE)
         for i in range(0, len(remaining_labels), BATCH_SIZE):
             batch = remaining_labels[i : i + BATCH_SIZE]
             batch_ids = remaining_ids[i : i + BATCH_SIZE]
@@ -166,24 +171,24 @@ def main():
                 results = translate_batch(batch)
                 for hp_id, fr_label in zip(batch_ids, results):
                     translations[hp_id] = fr_label
-            except Exception as e:
-                print(f"  Error at batch {i}: {e} — falling back to English for this batch")
+            except Exception:
+                logger.warning("Error at batch %d — falling back to English for this batch", i, exc_info=True)
                 for hp_id, en_label in zip(batch_ids, batch):
                     translations[hp_id] = en_label
             # Save cache after each batch
             with open(cache_file, "w") as cf:
                 json.dump(translations, cf)
             done = min(i + BATCH_SIZE, len(remaining_labels))
-            print(f"  {done}/{len(remaining_labels)}")
+            logger.info("  %d/%d", done, len(remaining_labels))
             if i + BATCH_SIZE < len(remaining_labels):
                 time.sleep(1)
     else:
-        print("All terms already in cache — writing output.")
+        logger.info("All terms already in cache — writing output.")
 
     fieldnames = ["subject_id", "source_language", "translation_language",
                   "predicate_id", "source_value", "translation_status", "translation_value"]
 
-    print(f"Writing {babelon_out}...")
+    logger.info("Writing %s …", babelon_out)
     with open(babelon_out, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter="\t")
         writer.writeheader()
@@ -202,7 +207,7 @@ def main():
 
     official = len(translated_ids)
     auto = len(translations)
-    print(f"Done: {official} official + {auto} automatic = {official + auto} total label translations.")
+    logger.info("Done: %d official + %d automatic = %d total label translations", official, auto, official + auto)
 
 
 if __name__ == "__main__":
