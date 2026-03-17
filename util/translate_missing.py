@@ -11,7 +11,7 @@ Usage:
     venv/bin/python translate_missing.py /path/to/poc_hpo
 
     The script expects these files in the target directory:
-      - hp.json            (HPO ontology)
+      - hp.obo             (HPO ontology in OBO format)
       - hp-fr.babelon.tsv  (official French translations)
 
     Output:
@@ -31,30 +31,53 @@ PA_ROOT = "HP:0000118"
 BATCH_SIZE = 100
 
 
-def load_pa_terms(hp_json_path: Path) -> dict[str, str]:
+def load_pa_terms(hp_obo_path: Path) -> dict[str, str]:
     """Return {hp_id: english_label} for all active terms under Phenotypic abnormality."""
-    with open(hp_json_path) as f:
-        data = json.load(f)
-
-    graph = data["graphs"][0]
     nodes: dict[str, str] = {}
     children: dict[str, list[str]] = {}
 
-    for n in graph["nodes"]:
-        if n.get("type") != "CLASS":
-            continue
-        if n.get("meta", {}).get("deprecated", False):
-            continue
-        hp_id = n["id"].rsplit("/", 1)[-1].replace("_", ":")
-        label = n.get("lbl", "")
-        if label:
-            nodes[hp_id] = label
+    with open(hp_obo_path, encoding="utf-8") as f:
+        current_id = None
+        current_name = None
+        current_parents: list[str] = []
+        is_obsolete = False
+        in_term = False
 
-    for e in graph["edges"]:
-        sub = e["sub"].rsplit("/", 1)[-1].replace("_", ":")
-        obj = e["obj"].rsplit("/", 1)[-1].replace("_", ":")
-        if sub in nodes and obj in nodes:
-            children.setdefault(obj, []).append(sub)
+        def _save_term():
+            if current_id and current_name and not is_obsolete:
+                nodes[current_id] = current_name
+                for pid in current_parents:
+                    children.setdefault(pid, []).append(current_id)
+
+        for line in f:
+            line = line.rstrip("\n")
+            if line == "[Term]":
+                if in_term:
+                    _save_term()
+                current_id = None
+                current_name = None
+                current_parents = []
+                is_obsolete = False
+                in_term = True
+                continue
+            if line.startswith("[") and line.endswith("]"):
+                if in_term:
+                    _save_term()
+                in_term = False
+                continue
+            if not in_term:
+                continue
+            if line.startswith("id: "):
+                current_id = line[4:]
+            elif line.startswith("name: "):
+                current_name = line[6:]
+            elif line.startswith("is_a: "):
+                current_parents.append(line[6:].split(" ", 1)[0])
+            elif line.startswith("is_obsolete: true"):
+                is_obsolete = True
+
+        if in_term:
+            _save_term()
 
     pa_terms: dict[str, str] = {}
     queue = deque([PA_ROOT])
@@ -95,17 +118,17 @@ def main():
         sys.exit(1)
 
     target_dir = Path(sys.argv[1]).resolve()
-    hp_json = target_dir / "hp.json"
+    hp_obo = target_dir / "hp.obo"
     babelon_in = target_dir / "hp-fr.babelon.tsv"
     babelon_out = target_dir / "hp-fr-amended.babelon.tsv"
 
-    for f in (hp_json, babelon_in):
+    for f in (hp_obo, babelon_in):
         if not f.exists():
             print(f"Error: {f} not found")
             sys.exit(1)
 
-    print(f"Loading HPO terms from {hp_json}...")
-    pa_terms = load_pa_terms(hp_json)
+    print(f"Loading HPO terms from {hp_obo}...")
+    pa_terms = load_pa_terms(hp_obo)
     print(f"  {len(pa_terms)} active terms under Phenotypic abnormality")
 
     print(f"Loading existing translations from {babelon_in}...")

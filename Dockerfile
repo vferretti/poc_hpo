@@ -17,10 +17,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY main.py .
 COPY static/ static/
 COPY --from=frontend-builder /static/dist static/dist
-COPY hp.json .
+COPY hp.obo .
 COPY hp-fr*.babelon.tsv .
 
-ENV HP_JSON_PATH=/app/hp.json
+ENV HP_OBO_PATH=/app/hp.obo
 ENV BABELON_PATH=/app/hp-fr-amended.babelon.tsv
 
 EXPOSE 8000
