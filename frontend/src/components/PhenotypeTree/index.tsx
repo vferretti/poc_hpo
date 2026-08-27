@@ -5,6 +5,7 @@ import { Input, Radio, Spin, Tooltip, Tree } from 'antd';
 
 // INTEGRATION: Replace with `import intl from 'react-intl-universal';`
 import { intl } from './intl';
+import { fold, foldWithMap } from './fold';
 
 // INTEGRATION: Replace with `import { HpoTreeApi } from 'api/hpo/hpoTreeApi';`
 import {
@@ -80,20 +81,36 @@ const toTreeNode = (hpo: IHpoTreeNode, disabled: Set<string>, bold = false): Tre
   };
 };
 
-const highlightText = (text: string, query: string, className?: string): React.ReactNode => {
-  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const parts = text.split(new RegExp(`(${escaped})`, 'gi'));
-  return parts.map((part, i) =>
-    i % 2 === 1 ? (
-      <mark key={i} className={styles.highlight}>
-        {part}
-      </mark>
-    ) : className ? (
-      <span key={i} className={className}>{part}</span>
-    ) : (
-      part
-    ),
-  );
+// Le serveur cherche sur les libellés repliés (sans accent ni ligature) : le
+// surlignage doit replier de la même façon, sinon taper « deficience » ramène
+// « Déficience intellectuelle » sans rien y surligner. `foldWithMap` redonne la
+// position, dans le libellé d'origine, de ce que le serveur a trouvé.
+const highlightText = (text: string, query: string): React.ReactNode => {
+  const needle = fold(query);
+  if (!needle) return text;
+
+  const { folded, map } = foldWithMap(text);
+  const parts: React.ReactNode[] = [];
+  let from = 0;
+  let cursor = 0;
+  let hit = folded.indexOf(needle, cursor);
+
+  while (hit >= 0) {
+    const start = map[hit];
+    const end = map[hit + needle.length];
+    if (start > from) parts.push(text.slice(from, start));
+    parts.push(
+      <mark key={start} className={styles.highlight}>
+        {text.slice(start, end)}
+      </mark>,
+    );
+    from = end;
+    cursor = hit + needle.length;
+    hit = folded.indexOf(needle, cursor);
+  }
+
+  if (from < text.length) parts.push(text.slice(from));
+  return parts.length ? parts : text;
 };
 
 const highlightLabel = (label: string, id: string, query: string): React.ReactNode => {

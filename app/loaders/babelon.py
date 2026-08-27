@@ -8,6 +8,7 @@ from pathlib import Path
 
 from app.config import PA_ROOT
 from app.models import HPOData
+from app.text import fold
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +19,7 @@ def load_french(data: HPOData, path: str) -> None:
         logger.warning("Babelon file not found at %s – keeping English labels", path)
         for nid in data.pa_subtree_ids:
             if nid != PA_ROOT and nid in data.nodes:
-                data.label_lower_fr[nid] = data.nodes[nid].label_en.lower()
+                data.search_index_fr[nid] = fold(data.nodes[nid].label_en)
         data.sorted_children_fr = dict(data.sorted_children_en)
         return
 
@@ -47,7 +48,7 @@ def load_french(data: HPOData, path: str) -> None:
     # Build French search index
     for nid in pa:
         if nid != PA_ROOT and nid in nodes:
-            data.label_lower_fr[nid] = nodes[nid].label("fr").lower()
+            data.search_index_fr[nid] = fold(nodes[nid].label("fr"))
 
     # Pre-sort children by French label
     for nid in pa:

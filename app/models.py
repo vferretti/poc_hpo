@@ -30,8 +30,8 @@ class HPOData:
     __slots__ = (
         "nodes",
         "pa_subtree_ids",
-        "label_lower_fr",
-        "label_lower_en",
+        "search_index_fr",
+        "search_index_en",
         "child_count",
         "sorted_children_fr",
         "sorted_children_en",
@@ -43,8 +43,9 @@ class HPOData:
     def __init__(self) -> None:
         self.nodes: dict[str, HPONode] = {}
         self.pa_subtree_ids: frozenset[str] = frozenset()
-        self.label_lower_fr: dict[str, str] = {}
-        self.label_lower_en: dict[str, str] = {}
+        # Libellés repliés par app.text.fold() — la clé de comparaison de /api/search.
+        self.search_index_fr: dict[str, str] = {}
+        self.search_index_en: dict[str, str] = {}
         self.child_count: dict[str, int] = {}
         self.sorted_children_fr: dict[str, tuple[str, ...]] = {}
         self.sorted_children_en: dict[str, tuple[str, ...]] = {}

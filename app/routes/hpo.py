@@ -8,6 +8,7 @@ from fastapi import APIRouter, HTTPException, Query
 
 from app.config import PA_ROOT, Lang
 from app.models import HPOData
+from app.text import fold
 
 router = APIRouter(prefix="/api")
 
@@ -69,13 +70,15 @@ async def get_children(node_id: str, lang: Lang = Query("fr")):
 @router.get("/search")
 async def search(q: str = Query(..., min_length=3), lang: Lang = Query("fr")):
     d = _get_data()
-    query_lower = q.lower()
-    search_index = d.label_lower_fr if lang == "fr" else d.label_lower_en
+    # La requête subit le même repli que les index : la recherche ignore donc
+    # accents, ligatures œ/æ, apostrophes typographiques et espaces insécables.
+    query_folded = fold(q)
+    search_index = d.search_index_fr if lang == "fr" else d.search_index_en
 
     # Find matching nodes (label substring + HP ID)
     matched_ids: set[str] = set()
     for nid, lbl in search_index.items():
-        if query_lower in lbl or query_lower in nid.lower():
+        if query_folded in lbl or query_folded in nid.lower():
             matched_ids.add(nid)
 
     # Walk up ancestors for tree expansion

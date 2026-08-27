@@ -7,6 +7,7 @@ from collections import deque
 
 from app.config import PA_ROOT
 from app.models import HPOData, HPONode
+from app.text import fold
 
 logger = logging.getLogger(__name__)
 
@@ -102,11 +103,13 @@ def load_obo(data: HPOData, path: str) -> None:
         )
 
     # -- Pre-compute child counts + English search index ---------------------
+    # Le libellé est replié une fois pour toutes : /api/search compare du replié
+    # au replié, donc sans accent ni ligature (voir app/text.py).
     for nid in pa:
         node = nodes[nid]
         data.child_count[nid] = len(node.children_ids)
         if nid != PA_ROOT:
-            data.label_lower_en[nid] = node.label_en.lower()
+            data.search_index_en[nid] = fold(node.label_en)
 
     # -- Pre-sort children by English label ----------------------------------
     for nid in pa:
